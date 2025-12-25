@@ -44,10 +44,14 @@ export default function LoginForm(){
                     text-white
                     focus:border-foreground/30"
                     {...register("email")}/>
+                    <div className="h-4">
                     {errors.email?.message && (
+
                         <p
                         className="text-xs text-red-600">{errors.email.message}</p>
                     )}
+
+                    </div>
                 </div>
                 <div className="space-y-1">
                     <label htmlFor="password">
@@ -63,9 +67,12 @@ export default function LoginForm(){
                     focus:border-foreground/30"
                     placeholder="******" 
                      />
+                     <div className="h-4">
+
                     {errors.password?.message && (
                         <p className="text-xs text-red-600">{errors.password.message}</p>
                     )}
+                    </div>
                 </div>
 
                 <button
