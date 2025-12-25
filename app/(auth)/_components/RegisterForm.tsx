@@ -51,12 +51,56 @@ export default function RegisterForm(){
                     </div>
                 </div>
                 <div className="space-y-1">
+                    <label htmlFor="name">Full Name</label>
+                    <input type="text"
+                    id="name"
+                    placeholder="Your Name"
+                    autoComplete="name" 
+                    className="w-full px-4 h-12 rounded-lg 
+                    border border-gray-400
+                    text-white
+                    focus:border-foreground/30"
+                    {...register("name")}/>
+                    <div className="h-4">
+                    {errors.email?.message && (
+
+                        <p
+                        className="text-xs text-red-600">{errors.email.message}</p>
+                    )}
+
+                    </div>
+                </div>
+                
+            
+                <div className="space-y-1">
                     <label htmlFor="password">
                         Password
                     </label>
                     <input type="password"
                     id="password"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
+                    {...register("password")}
+                    className="w-full px-4 h-12 rounded-lg 
+                    border border-gray-400
+                    text-white
+                    focus:border-foreground/30"
+                    placeholder="******" 
+                     />
+                     <div className="h-4">
+
+                    {errors.password?.message && (
+                        <p className="text-xs text-red-600">{errors.password.message}</p>
+                    )}
+                    </div>
+                </div>
+            
+                <div className="space-y-1">
+                    <label htmlFor="password">
+                        Confirm Password
+                    </label>
+                    <input type="password"
+                    id="confirmpassword"
+                    autoComplete="new-password"
                     {...register("password")}
                     className="w-full px-4 h-12 rounded-lg 
                     border border-gray-400
