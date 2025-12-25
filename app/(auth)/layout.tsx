@@ -12,10 +12,10 @@ export default function AuthLayout({children}: {children: React.ReactNode}) {
  
         <div className="relative hidden md:block rounded-l-xl overflow-hidden">
           <Image
-            src="/images/login.png"
+            src="/images/cat2.png"
             alt="pet image"
             fill
-            className="object-fill "
+            className="object-cover "
           />
         </div>
 

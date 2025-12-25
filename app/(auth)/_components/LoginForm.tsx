@@ -74,6 +74,10 @@ export default function LoginForm(){
                 className="h-10 w-full rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 disabled:opacity-60">
                 {isSubmitting || pending ? "Logging in..." : "Log in"}
                 </button>
+
+                 <div className="mt-1 text-center text-sm">
+                Don't have an account? <Link href="/register" className="font-semibold hover:underline">Sign up</Link>
+            </div>
             </div>
         </form>
     )
