@@ -33,15 +33,16 @@ export default function LoginForm(){
     return(
         <form onSubmit={handleSubmit(submit)}>
             <div className="space-y-4">
-                <div className="font-medium">
-                    <label htmlFor="email">Email</label>
+                <div className="font-medium text-sm" >
+                    <label htmlFor="email" className="text-sm">Email</label>
                     <input type="email"
                     id="email"
                     placeholder="youremail@example.com"
                     autoComplete="email" 
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border border-white/15
                     text-white
+                    text-sm
                     focus:border-foreground/30"
                     {...register("email")}/>
                     <div className="h-4">
@@ -54,16 +55,17 @@ export default function LoginForm(){
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <label htmlFor="password">
+                    <label htmlFor="password" className="text-sm">
                         Password
                     </label>
                     <input type="password"
                     id="password"
                     autoComplete="current-password"
                     {...register("password")}
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border bborder-white/15
                     text-white
+                    text-sm
                     focus:border-foreground/30"
                     placeholder="******" 
                      />

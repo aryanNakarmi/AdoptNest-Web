@@ -64,10 +64,10 @@ export default function RegisterForm(){
                     text-sm"
                     {...register("name")}/>
                     <div className="h-4">
-                    {errors.email?.message && (
+                    {errors.name?.message && (
 
                         <p
-                        className="text-xs text-red-600">{errors.email.message}</p>
+                        className="text-xs text-red-600">{errors.name.message}</p>
                     )}
 
                     </div>
@@ -104,7 +104,7 @@ export default function RegisterForm(){
                     <input type="password"
                     id="confirmpassword"
                     autoComplete="new-password"
-                    {...register("password")}
+                    {...register("confirmPassword")}
                     className="w-full px-4 h-10 rounded-lg 
                     border border-white/15
                     text-white
@@ -114,8 +114,8 @@ export default function RegisterForm(){
                      />
                      <div className="h-4">
 
-                    {errors.password?.message && (
-                        <p className="text-xs text-red-600">{errors.password.message}</p>
+                    {errors.confirmPassword?.message && (
+                        <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
                     )}
                     </div>
                 </div>
