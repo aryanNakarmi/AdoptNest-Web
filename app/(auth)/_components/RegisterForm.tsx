@@ -30,15 +30,16 @@ export default function RegisterForm(){
     return (
         <form onSubmit={handleSubmit(submit)}>
             <div className="space-y-4">
-                <div className="font-medium">
+                <div className="text-sm ">
                     <label htmlFor="email">Email</label>
                     <input type="email"
                     id="email"
                     placeholder="youremail@example.com"
                     autoComplete="email" 
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border border-white/15
                     text-white
+                    text-sm
                     focus:border-foreground/30"
                     {...register("email")}/>
                     <div className="h-4">
@@ -51,15 +52,16 @@ export default function RegisterForm(){
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <label htmlFor="name">Full Name</label>
+                    <label htmlFor="name" className="text-sm">Full name</label>
                     <input type="text"
                     id="name"
-                    placeholder="Your Name"
+                    placeholder="your name"
                     autoComplete="name" 
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border border-white/15
                     text-white
-                    focus:border-foreground/30"
+                    focus:border-foreground/30
+                    text-sm"
                     {...register("name")}/>
                     <div className="h-4">
                     {errors.email?.message && (
@@ -73,17 +75,18 @@ export default function RegisterForm(){
                 
             
                 <div className="space-y-1">
-                    <label htmlFor="password">
+                    <label htmlFor="password" className="text-sm">
                         Password
                     </label>
                     <input type="password"
                     id="password"
                     autoComplete="new-password"
                     {...register("password")}
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border border-white/15
                     text-white
-                    focus:border-foreground/30"
+                    focus:border-foreground/30
+                    text-sm"
                     placeholder="******" 
                      />
                      <div className="h-4">
@@ -95,17 +98,18 @@ export default function RegisterForm(){
                 </div>
             
                 <div className="space-y-1">
-                    <label htmlFor="password">
+                    <label htmlFor="password" className="text-sm">
                         Confirm Password
                     </label>
                     <input type="password"
                     id="confirmpassword"
                     autoComplete="new-password"
                     {...register("password")}
-                    className="w-full px-4 h-12 rounded-lg 
-                    border border-gray-400
+                    className="w-full px-4 h-10 rounded-lg 
+                    border border-white/15
                     text-white
-                    focus:border-foreground/30"
+                    focus:border-foreground/30
+                    text-sm"
                     placeholder="******" 
                      />
                      <div className="h-4">
@@ -120,11 +124,11 @@ export default function RegisterForm(){
                 type="submit"
                 disabled= {isSubmitting || pending}
                 className="h-10 w-full rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 disabled:opacity-60">
-                {isSubmitting || pending ? "Logging in..." : "Log in"}
+                {isSubmitting || pending ? "Creating account..." : "Register"}
                 </button>
 
                  <div className="mt-1 text-center text-sm">
-                Don't have an account? <Link href="/register" className="font-semibold hover:underline">Sign up</Link>
+                Already have an account? <Link href="/login" className="font-semibold hover:underline">Log in</Link>
             </div>
             </div>
         </form>
