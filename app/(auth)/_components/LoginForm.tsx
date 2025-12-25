@@ -63,7 +63,7 @@ export default function LoginForm(){
                     autoComplete="current-password"
                     {...register("password")}
                     className="w-full px-4 h-10 rounded-lg 
-                    border bborder-white/15
+                    border border-white/15
                     text-white
                     text-sm
                     focus:border-foreground/30"
