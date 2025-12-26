@@ -15,7 +15,7 @@
     return (
         
         <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-white/10">
-        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-">
+        <nav className="mx-auto  px-4 sm:px-6 lg:px-">
             <div className="flex h-14 items-center justify-between w-full">
             {/* Left: Logo */}
             <div className="flex items-center gap-2 justify-start">

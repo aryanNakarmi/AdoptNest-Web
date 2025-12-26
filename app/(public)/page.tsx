@@ -4,14 +4,15 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <section className="w-full h-[80vh] flex items-center justify-center px-4">
+    <section className=" w-full h-[80vh] flex items-center justify-center px-5 my-10">
       {/* Rounded hero background */}
       <div className="relative w-full h-full rounded-2xl overflow-hidden">
         <Image
-          src="/images/image2.png" // replace with your actual hero image
+          src="/images/dog.jpg" 
           alt="AdoptNest Hero"
           fill
           className="object-cover"
+           sizes="100vw"
           priority
         />
 
@@ -31,7 +32,7 @@ export default function Home() {
               href="#adopt"
               className="px-6 py-3 rounded-full text-white
               bg-red-600 font-semibold 
-              
+              hover:bg-red-400
               hover:text-black
               transition-colors"
             > 
