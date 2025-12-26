@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <div>
       
-        <div className="h-16 flex items-center justify-center border-b border-gray-700">
+        <div className="h-16 flex items-center justify-center border-b border-gray-800">
           <Image src="/images/logo.png" alt="AdoptNest" width={40} height={40} />
           <span className="ml-2 font-bold text-lg">AdoptNest</span>
         </div>
