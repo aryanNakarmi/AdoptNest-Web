@@ -7,14 +7,24 @@ export default function AuthLayout({children}: {children: React.ReactNode}) {
             
    
 
-         <div className="grid w-full max-w-4xl grid-cols-1 rounded-xl bg-white/50 dark:bg-black/20 shadow-lg ring-1 ring-black/5 md:grid-cols-2 border
+         {/* <div className="grid w-full max-w-4xl grid-cols-1 rounded-xl
+        md:grid-cols-2 
+        border
+        border-white/40
          h-[650]
          ">
-        
- 
+         */}
+        <div className="
+          grid w-full max-w-4xl grid-cols-1 md:grid-cols-2
+          rounded-2xl
+          h-[650px]
+          relative
+          shadow-[0_0_30px_10px_rgba(255,255,255,.2)]
+        ">
+
         <div className="relative hidden md:block rounded-l-xl overflow-hidden ">
           <Image
-            src="/images/catpic.jpg"
+            src="/images/ima.png"
             alt="pet image"
             fill
             className="object-cover "
