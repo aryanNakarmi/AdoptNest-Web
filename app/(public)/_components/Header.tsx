@@ -7,12 +7,12 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-red-100 dark:border-surface-dark">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image
-          src="images/logo.png"
-          alt="logo"
-          height={200}
-          width={50}
-          />
+           <Image
+                      src="/images/logo.png"
+                      alt="pet logo"
+                      height={40}
+                      width={40}
+                      className="object-cover "/>
           <h2 className="text-xl font-bold tracking-tight">AdoptNest</h2>
         </div>
         <nav className="hidden md:flex items-center gap-8">
