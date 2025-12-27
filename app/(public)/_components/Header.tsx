@@ -56,7 +56,7 @@
                     className="px-4 py-2 rounded-lg bg-red-700 text-white 
                     text-sm
                     hover:bg-foreground/5 
-                    transition-colors">Login</Link>
+                    transition-colors">Join Us</Link>
                 </div>
             
 
