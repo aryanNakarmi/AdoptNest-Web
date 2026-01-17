@@ -1,16 +1,14 @@
-"use client";
+    "use client";
 
-import LoginForm from "../_components/LoginForm";
+    import LoginForm from "../_components/LoginForm";
 
-export default function Page() {
-    return (
-        <div className="space-y-6 w-full">
-            <div className="text-center">
-                <h1 className="text-2xl font-semibold">Welcome Back!</h1>
-                <p>Login to find your new best friend</p>
+    export default function Page() {
+        return (
+            <div className="space-y-6 w-full">
+                <div className="text-center">
+                </div>
+                <LoginForm/>
+
             </div>
-            <LoginForm/>
-
-        </div>
-    );
-}
+        );
+    }

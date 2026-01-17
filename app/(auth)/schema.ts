@@ -11,6 +11,7 @@ export const registerSchema = z.object({
     name: z.string().min(2,{message:"Enter you name"}),
     email: z.email({message: "Enter a valid email"}),
     password: z.string().min(6,{message:"Minimum 6 characters"}),
+    phone: z.string().min(10,{message: "Invalid Number"}),
      confirmPassword: z.string().min(6, { message: "Minimum 6 characters" }),
 }).refine((v)=> v.password === v.confirmPassword,{
     path: ["confirmPassword"],

@@ -1,42 +1,38 @@
 import Image from "next/image";
 
-export default function AuthLayout({children}: {children: React.ReactNode}) {
+export default function LoginLayout({children}: {children: React.ReactNode}) {
     return (
-        
-        <div className="relative flex min-h-screen w-full items-center justify-center bg-black p-4">
-            
-   
+        <div className="relative flex min-h-screen w-full bg-white">
+            {/* Left side - Hero with image and text (hidden on mobile) */}
+            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-orange-900 to-orange-800 flex-col justify-between p-16 text-white">
+                <div className="absolute inset-0">
+                    <Image
+                        src="/images/cat.png"
+                        alt="pet image"
+                        fill
+                        className="object-cover opacity-80"
+                    />
+                </div>
+                
+                <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Image src="/images/logo.png" alt="AdoptNest" width={32} height={32} />
+                        <span className="text-2xl font-bold">AdoptNest</span>
+                    </div>
+                </div>
 
-         {/* <div className="grid w-full max-w-4xl grid-cols-1 rounded-xl
-        md:grid-cols-2 
-        border
-        border-white/40
-         h-[650]
-         ">
-         */}
-        <div className="
-          grid w-full max-w-4xl grid-cols-1 md:grid-cols-2
-          rounded-2xl
-          h-[650px]
-          relative
-          shadow-[0_0_30px_10px_rgba(255,255,255,.2)]
-        ">
+                <div className="relative z-10 space-y-4">
+                    <h2 className="text-4xl font-bold leading-tight">Find your new best friend.</h2>
+                    <p className="text-lg text-white/90">Join thousands of families who have found their forever friends through AdoptNest.</p>
+                </div>
+            </div>
 
-        <div className="relative hidden md:block rounded-l-xl overflow-hidden ">
-          <Image
-            src="/images/ima.png"
-            alt="pet image"
-            fill
-            className="object-cover "
-          />
-        </div>
-
-
-        <div className="flex flex-col items-center justify-center p-8 sm:p-12">
-          {children}
-        </div>
-
-      </div>
+            {/* Right side - Form (centered on mobile, full width) */}
+            <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 lg:p-12 min-h-screen lg:min-h-auto">
+                <div className="w-full max-w-md">
+                    {children}
+                </div>
+            </div>
         </div>
     );
 }

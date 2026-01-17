@@ -1,11 +1,11 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { LoginData, loginSchema } from "../schema";
 
 export default function LoginForm(){
@@ -23,8 +23,7 @@ export default function LoginForm(){
     const [pending, setTransition] = useTransition();
 
     const submit = async (values: LoginData)=>{
-
-        setTransition( async()=>{
+        setTransition(async()=>{
             await new Promise((resolve)=> setTimeout(resolve,1000));
             router.push("/dashboard");
         })
@@ -32,64 +31,87 @@ export default function LoginForm(){
     };
 
     return(
-        <form onSubmit={handleSubmit(submit)}>
-            <div className="space-y-4">
-                <div className="font-medium text-sm" >
-                    <label htmlFor="email" className="text-sm">Email</label>
+        <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
+            <div className="space-y-3 w-full">
+                {/* Logo */}
+                <div className="flex items-center justify-center mb-6 lg:hidden">
+                    <Image src="/images/logo.png" alt="AdoptNest" width={40} height={40} />
+                    <span className="ml-2 font-bold text-lg text-gray-900">AdoptNest</span>
+                </div>
+
+                {/* Heading */}
+                <div className="text-center mb-4">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Welcome Back!</h1>
+                    <p className="text-gray-600 text-sm">Log in to continue your journey of finding a forever friend.</p>
+                </div>
+
+                {/* Email Field */}
+                <div className="space-y-1">
+                    <label htmlFor="email" className="text-sm font-medium text-gray-900">Email</label>
                     <input type="email"
                     id="email"
-                    placeholder="youremail@example.com"
+                    placeholder="yourname@example.com"
                     autoComplete="email" 
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
+                    className="w-full px-4 h-12 rounded-full 
+                    border-2 border-gray-300
+                    text-gray-900
                     text-sm
-                    focus:border-foreground/30"
+                    placeholder:text-gray-500
+                    focus:border-orange-400
+                    focus:outline-none
+                    transition-colors"
                     {...register("email")}/>
-                    <div className="h-4">
+                    <div className="h-3">
                     {errors.email?.message && (
-
-                        <p
-                        className="text-xs text-red-600">{errors.email.message}</p>
+                        <p className="text-xs text-red-600">{errors.email.message}</p>
                     )}
-
                     </div>
                 </div>
+
+                {/* Password Field */}
                 <div className="space-y-1">
-                    <label htmlFor="password" className="text-sm">
-                        Password
-                    </label>
+                    <div className="flex justify-between items-center">
+                        <label htmlFor="password" className="text-sm font-medium text-gray-900">
+                            Password
+                        </label>
+                      
+                    </div>
                     <input type="password"
                     id="password"
                     autoComplete="current-password"
                     {...register("password")}
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
+                    className="w-full px-4 h-12 rounded-full 
+                    border-2 border-gray-300
+                    text-gray-900
                     text-sm
-                    focus:border-foreground/30"
-                    placeholder="******" 
-                     />
-                     <div className="h-4">
-
+                    placeholder:text-gray-500
+                    focus:border-orange-400
+                    focus:outline-none
+                    transition-colors"
+                    placeholder="Enter your password" 
+                    />
+                    <div className="h-3">
                     {errors.password?.message && (
                         <p className="text-xs text-red-600">{errors.password.message}</p>
                     )}
                     </div>
                 </div>
 
+                {/* Login Button */}
                 <button
                 type="submit"
-                disabled= {isSubmitting || pending}
-                className="h-10 w-full rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 disabled:opacity-60">
-                {isSubmitting || pending ? "Logging in..." : "Log in"}
+                disabled={isSubmitting || pending}
+                className="h-12 w-full rounded-full text-white text-base font-bold hover:opacity-90 disabled:opacity-60 transition-colors mt-3 shadow-lg"
+                style={{backgroundColor: '#FF8C69'}}>
+                {isSubmitting || pending ? "Logging in..." : "Login"}
                 </button>
 
-                 <div className="mt-1 text-center text-sm">
-                Don't have an account? <Link href="/register" className="font-semibold hover:underline">Sign up</Link>
-            </div>
+
+                {/* Sign Up Link */}
+                <div className="mt-4 text-center text-sm text-gray-600">
+                    Don't have an account? <Link href="/register" className="font-bold text-orange-500 hover:underline">Sign Up</Link>
+                </div>
             </div>
         </form>
     )
-
 }

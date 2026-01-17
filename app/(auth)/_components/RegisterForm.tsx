@@ -6,6 +6,7 @@ import { RegisterData, registerSchema } from "../schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function RegisterForm(){
     const router = useRouter();
@@ -24,114 +25,159 @@ export default function RegisterForm(){
             await new Promise((resolve)=>setTimeout(resolve,1000));
             router.push("/login");
         })
-        //go to login page
         console.log("register",values);
     }
+    
     return (
-        <form onSubmit={handleSubmit(submit)}>
-            <div className="space-y-4">
-                <div className="text-sm ">
-                    <label htmlFor="email">Email</label>
-                    <input type="email"
-                    id="email"
-                    placeholder="youremail@example.com"
-                    autoComplete="email" 
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
-                    text-sm
-                    focus:border-foreground/30"
-                    {...register("email")}/>
-                    <div className="h-4">
-                    {errors.email?.message && (
-
-                        <p
-                        className="text-xs text-red-600">{errors.email.message}</p>
-                    )}
-
-                    </div>
+        <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
+            <div className="space-y-2 w-full max-h-[600px] overflow-y-auto pr-2">
+                {/* Logo */}
+                <div className="flex items-center justify-center mb-4 lg:hidden">
+                    <Image src="/images/logo.png" alt="AdoptNest" width={40} height={40} />
+                    <span className="ml-2 font-bold text-lg text-gray-900">AdoptNest</span>
                 </div>
+
+                {/* Heading */}
+                <div className="text-center mb-3">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Create an Account</h1>
+                    <p className="text-gray-600 text-sm">Fill in your details to get started with adoption.</p>
+                </div>
+
+                {/* Full Name */}
                 <div className="space-y-1">
-                    <label htmlFor="name" className="text-sm">Full name</label>
+                    <label htmlFor="name" className="text-sm font-medium text-gray-900">Full Name</label>
                     <input type="text"
                     id="name"
-                    placeholder="your name"
+                    placeholder="John Doe"
                     autoComplete="name" 
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
-                    focus:border-foreground/30
-                    text-sm"
+                    className="w-full px-4 h-12 rounded-full 
+                    border-2 border-gray-300
+                    text-gray-900
+                    placeholder:text-gray-500
+                    focus:border-teal-500
+                    focus:outline-none
+                    text-sm
+                    transition-colors"
                     {...register("name")}/>
-                    <div className="h-4">
+                    <div className="h-3">
                     {errors.name?.message && (
-
-                        <p
-                        className="text-xs text-red-600">{errors.name.message}</p>
+                        <p className="text-xs text-red-600">{errors.name.message}</p>
                     )}
-
                     </div>
                 </div>
-                
-            
+
+                {/* Email */}
                 <div className="space-y-1">
-                    <label htmlFor="password" className="text-sm">
-                        Password
-                    </label>
-                    <input type="password"
-                    id="password"
-                    autoComplete="new-password"
-                    {...register("password")}
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
-                    focus:border-foreground/30
-                    text-sm"
-                    placeholder="******" 
-                     />
-                     <div className="h-4">
-
-                    {errors.password?.message && (
-                        <p className="text-xs text-red-600">{errors.password.message}</p>
+                    <label htmlFor="email" className="text-sm font-medium text-gray-900">Email Address</label>
+                    <input type="email"
+                    id="email"
+                    placeholder="hello@example.com"
+                    autoComplete="email" 
+                    className="w-full px-4 h-12 rounded-full 
+                    border-2 border-gray-300
+                    text-gray-900
+                    text-sm
+                    placeholder:text-gray-500
+                    focus:border-teal-500
+                    focus:outline-none
+                    transition-colors"
+                    {...register("email")}/>
+                    <div className="h-3">
+                    {errors.email?.message && (
+                        <p className="text-xs text-red-600">{errors.email.message}</p>
                     )}
                     </div>
                 </div>
-            
+
+                {/* Phone */}
                 <div className="space-y-1">
-                    <label htmlFor="password" className="text-sm">
-                        Confirm Password
-                    </label>
-                    <input type="password"
-                    id="confirmpassword"
-                    autoComplete="new-password"
-                    {...register("confirmPassword")}
-                    className="w-full px-4 h-10 rounded-lg 
-                    border border-white/15
-                    text-white
-                    focus:border-foreground/30
-                    text-sm"
-                    placeholder="******" 
-                     />
-                     <div className="h-4">
-
-                    {errors.confirmPassword?.message && (
-                        <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-900">Phone Number</label>
+                    <input type="tel"
+                    id="phone"
+                    placeholder="+977 "
+                    className="w-full px-4 h-12 rounded-full 
+                    border-2 border-gray-300
+                    text-gray-900
+                    placeholder:text-gray-500
+                    focus:border-teal-500
+                    focus:outline-none
+                    text-sm
+                    transition-colors"
+                    {...register("phone")}/>
+                    <div className="h-3">
+                    {errors.phone?.message && (
+                        <p className="text-xs text-red-600">{errors.phone.message}</p>
                     )}
                     </div>
                 </div>
 
+                {/* Password & Confirm Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                    {/* Password */}
+                    <div className="space-y-1">
+                        <label htmlFor="password" className="text-sm font-medium text-gray-900">Password</label>
+                        <input type="password"
+                        id="password"
+                        autoComplete="new-password"
+                        {...register("password")}
+                        className="w-full px-4 h-12 rounded-full 
+                        border-2 border-gray-300
+                        text-gray-900
+                        placeholder:text-gray-500
+                        focus:border-teal-500
+                        focus:outline-none
+                        text-sm
+                        transition-colors"
+                        placeholder="••••••••" 
+                        />
+                        <div className="h-3">
+                        {errors.password?.message && (
+                            <p className="text-xs text-red-600">{errors.password.message}</p>
+                        )}
+                        </div>
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="space-y-1">
+                        <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">Confirm</label>
+                        <input type="password"
+                        id="confirmPassword"
+                        autoComplete="new-password"
+                        {...register("confirmPassword")}
+                        className="w-full px-4 h-12 rounded-full 
+                        border-2 border-gray-300
+                        text-gray-900
+                        placeholder:text-gray-500
+                        focus:border-teal-500
+                        focus:outline-none
+                        text-sm
+                        transition-colors"
+                        placeholder="••••••••" 
+                        />
+                        <div className="h-3">
+                        {errors.confirmPassword?.message && (
+                            <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
+                        )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Register Button */}
                 <button
                 type="submit"
-                disabled= {isSubmitting || pending}
-                className="h-10 w-full rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 disabled:opacity-60">
+                disabled={isSubmitting || pending}
+                className="h-12 w-full rounded-full text-gray-900 text-base font-bold hover:opacity-90 disabled:opacity-60 transition-colors mt-2 shadow-lg"
+                style={{backgroundColor: '#0cedc8'}}>
                 {isSubmitting || pending ? "Creating account..." : "Register"}
                 </button>
 
-                 <div className="mt-1 text-center text-sm">
-                Already have an account? <Link href="/login" className="font-semibold hover:underline">Log in</Link>
-            </div>
+                {/* Login Link */}
+                <div className="mt-3 text-center text-sm text-gray-600">
+                    Already have an account? <Link href="/login" className="font-bold text-teal-500 hover:underline">Login</Link>
+                </div>
+
+                
             </div>
         </form>
     )
-
 }
