@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { RegisterData, registerSchema } from "../schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { handleRegister } from "@/lib/actions/auth-action";
 
 export default function RegisterForm(){
     const router = useRouter();
@@ -19,14 +20,30 @@ export default function RegisterForm(){
         mode: "onSubmit",
     });
     const [pending, setTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
-    const submit = async(values:RegisterData)=>{
-        setTransition(async ()=>{
-            await new Promise((resolve)=>setTimeout(resolve,1000));
-            router.push("/login");
-        })
-        console.log("register",values);
-    }
+       const submit = async (values: RegisterData) => {
+        setError(null);
+        setTransition(async () => {
+            try {
+
+                const response = await handleRegister(values);
+                if (!response.success) {
+                    throw new Error(response.message);
+                }
+                if (response.success) {
+                    router.push("/login");
+                } else {
+                    setError('Registration failed');
+                }
+
+            } catch (err: Error | any) {
+                setError(err.message || 'Registration failed');
+            }
+        });
+        // GO TO LOGIN PAGE
+        console.log("register", values);
+    };
     
     return (
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">

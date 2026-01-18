@@ -3,10 +3,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LoginData, loginSchema } from "../schema";
+import { handleLogin } from "@/lib/actions/auth-action";
 
 export default function LoginForm(){
 
@@ -21,15 +22,28 @@ export default function LoginForm(){
     });
 
     const [pending, setTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
-    const submit = async (values: LoginData)=>{
-        setTransition(async()=>{
-            await new Promise((resolve)=> setTimeout(resolve,1000));
-            router.push("/dashboard");
+    const submit = async (values: LoginData) => {
+        setError(null);
+
+        // GOTO
+        setTransition(async () => {
+            try {
+                const response = await handleLogin(values);
+                if (!response.success) {
+                    throw new Error(response.message);
+                }
+                if (response.success) {
+                    router.push("/user/dashboard");
+                } else {
+                    setError('Login failed');
+                }
+            } catch (err: Error | any) {
+                setError(err.message || 'Login failed');
+            }
         })
-        console.log("login", values);
     };
-
     return(
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
             <div className="space-y-3 w-full">
