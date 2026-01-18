@@ -57,7 +57,7 @@ export default function RegisterForm(){
                     focus:outline-none
                     text-sm
                     transition-colors"
-                    {...register("name")}/>
+                    {...register("fullName")}/>
                     <div className="h-3">
                     {errors.fullName?.message && (
                         <p className="text-xs text-red-600">{errors.fullName.message}</p>
