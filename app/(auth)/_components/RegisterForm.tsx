@@ -33,14 +33,13 @@ export default function RegisterForm(){
             <div className="space-y-2 w-full max-h-[600px] overflow-y-auto pr-2">
                 {/* Logo */}
                 <div className="flex items-center justify-center mb-4 lg:hidden">
-                    <Image src="/images/logo.png" alt="AdoptNest" width={40} height={40} />
-                    <span className="ml-2 font-bold text-lg text-gray-900">AdoptNest</span>
+                    
                 </div>
 
                 {/* Heading */}
                 <div className="text-center mb-3">
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">Create an Account</h1>
-                    <p className="text-gray-600 text-sm">Fill in your details to get started with adoption.</p>
+                    <p className="text-gray-600 text-sm">Join our family and find your new best friend</p>
                 </div>
 
                 {/* Full Name */}
@@ -60,8 +59,8 @@ export default function RegisterForm(){
                     transition-colors"
                     {...register("name")}/>
                     <div className="h-3">
-                    {errors.name?.message && (
-                        <p className="text-xs text-red-600">{errors.name.message}</p>
+                    {errors.fullName?.message && (
+                        <p className="text-xs text-red-600">{errors.fullName.message}</p>
                     )}
                     </div>
                 </div>

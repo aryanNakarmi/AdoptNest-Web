@@ -38,7 +38,7 @@ export default function LoginForm(){
                 {/* Heading */}
                 <div className="text-center mb-4">
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">Welcome Back!</h1>
-                    <p className="text-gray-600 text-sm">Log in to continue your journey of finding a forever friend.</p>
+                    <p className="text-gray-600 text-sm">Log in to your account</p>
                 </div>
 
                 {/* Email Field */}
