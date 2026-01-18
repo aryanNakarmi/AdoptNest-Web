@@ -33,11 +33,7 @@ export default function LoginForm(){
     return(
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
             <div className="space-y-3 w-full">
-                {/* Logo */}
-                <div className="flex items-center justify-center mb-6 lg:hidden">
-                    <Image src="/images/logo.png" alt="AdoptNest" width={40} height={40} />
-                    <span className="ml-2 font-bold text-lg text-gray-900">AdoptNest</span>
-                </div>
+           
 
                 {/* Heading */}
                 <div className="text-center mb-4">

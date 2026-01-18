@@ -7,7 +7,7 @@ export default function RegisterLayout({children}: {children: React.ReactNode}) 
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-900 to-teal-800 flex-col justify-between p-16 text-white">
                 <div className="absolute inset-0">
                     <Image
-                        src="/images/ima.png"
+                        src="/images/catty.jpg"
                         alt="pet image"
                         fill
                         className="object-cover opacity-80"

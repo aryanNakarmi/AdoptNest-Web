@@ -7,7 +7,7 @@ export default function LoginLayout({children}: {children: React.ReactNode}) {
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-orange-900 to-orange-800 flex-col justify-between p-16 text-white">
                 <div className="absolute inset-0">
                     <Image
-                        src="/images/cat.png"
+                        src="/images/dog1.jpg"
                         alt="pet image"
                         fill
                         className="object-cover opacity-80"
@@ -16,8 +16,6 @@ export default function LoginLayout({children}: {children: React.ReactNode}) {
                 
                 <div className="relative z-10 space-y-4">
                     <div className="flex items-center gap-3">
-                        <Image src="/images/logo.png" alt="AdoptNest" width={32} height={32} />
-                        <span className="text-2xl font-bold">AdoptNest</span>
                     </div>
                 </div>
 

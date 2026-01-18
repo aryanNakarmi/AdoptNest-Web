@@ -139,7 +139,7 @@ export default function RegisterForm(){
 
                     {/* Confirm Password */}
                     <div className="space-y-1">
-                        <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">Confirm</label>
+                        <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">Confirm Password</label>
                         <input type="password"
                         id="confirmPassword"
                         autoComplete="new-password"
@@ -166,7 +166,7 @@ export default function RegisterForm(){
                 <button
                 type="submit"
                 disabled={isSubmitting || pending}
-                className="h-12 w-full rounded-full text-gray-900 text-base font-bold hover:opacity-90 disabled:opacity-60 transition-colors mt-2 shadow-lg"
+                className="h-12 w-full rounded-full text-white text-base font-bold hover:opacity-90 disabled:opacity-60 transition-colors mt-2 shadow-lg"
                 style={{backgroundColor: '#0cedc8'}}>
                 {isSubmitting || pending ? "Creating account..." : "Register"}
                 </button>
