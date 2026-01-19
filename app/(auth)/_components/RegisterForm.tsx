@@ -119,10 +119,10 @@ export default function RegisterForm(){
                     focus:outline-none
                     text-sm
                     transition-colors"
-                    {...register("phone")}/>
+                    {...register("phoneNumber")}/>
                     <div className="h-3">
-                    {errors.phone?.message && (
-                        <p className="text-xs text-red-600">{errors.phone.message}</p>
+                    {errors.phoneNumber?.message && (
+                        <p className="text-xs text-red-600">{errors.phoneNumber.message}</p>
                     )}
                     </div>
                 </div>
