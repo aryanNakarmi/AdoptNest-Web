@@ -1,12 +1,13 @@
 
 export const API = {
     AUTH: {
-        LOGIN: '/api/v1/auth/login',
-        REGISTER: '/api/v1/auth/register',
+        LOGIN: '/api/auth/login',
+        REGISTER: '/api/auth/register',
+        UPDATEPROFILE: '/api/auth/update-profile',
     },
     ADMIN:{
         USER:{
-            CREATE: '/api/admin/users',
+            CREATE: '/api/admin/users/',
         }
     }
 }
