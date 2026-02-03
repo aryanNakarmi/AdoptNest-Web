@@ -1,205 +1,192 @@
 "use client";
-import { useAuth } from "@/context/AuthContext"; 
+
+import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
+import { FaPaw } from "react-icons/fa";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<
-    "destination" | "hotels" | "car" | "packages"
-  >("hotels");
-  const [activeFilter, setActiveFilter] = useState<
-    "recommended" | "popular" | "nearest"
-  >("popular");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Dummy data for featured hotels
-  const featuredHotels = [
+  const reports = [
     {
-      id: "1",
-      name: "Foto Hotel Phuket",
-      location: "Phuket",
-      rating: 4.2,
-      image:
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+      id: 1,
+      name: "Buddy",
+      location: "Kathmandu, Nepal",
+      description: "Friendly stray dog found near the park.",
+      image: "/images/dogimage.png",
     },
     {
-      id: "2",
-      name: "Marriott Resort SHA+",
-      location: "Phuket",
-      rating: 4.5,
-      image:
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
+      id: 2,
+      name: "Luna",
+      location: "Lalitpur, Nepal",
+      description: "Young cat rescued from the street.",
+      image: "/images/cat.png",
     },
     {
-      id: "3",
-      name: "Novotel Phuket City",
-      location: "Phuket City",
-      rating: 4.8,
-      image:
-        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800",
-    },
-  ];
-
-  // Dummy data for popular hotels
-  const popularHotels = [
-    {
-      id: "4",
-      name: "Holly Cottage",
-      location: "Alice Court, Annapolis MD 21401",
-      price: 110.0,
-      image:
-        "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=500",
+      id: 3,
+      name: "Snowy",
+      location: "Bhaktapur, Nepal",
+      description: "White street dog needs shelter.",
+      image: "/images/dog3.jpg",
     },
     {
-      id: "5",
-      name: "The Stables",
-      location: "Terry Lane, Golden CO 80403",
-      price: 90.0,
-      image:
-        "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=500",
+      id: 4,
+      name: "Misty",
+      location: "Pokhara, Nepal",
+      description: "Stray kitten looking for a home.",
+      image: "/images/catty.jpg",
     },
-    {
-      id: "6",
-      name: "The Old Rectory",
-      location: "Yale Street, Arvada CO 80007",
-      price: 50.0,
-      image:
-        "https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=500",
-    },
-    {
-      id: "7",
-      name: "Seaside Villa",
-      location: "Ocean Drive, Miami FL 33139",
-      price: 150.0,
-      image:
-        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=500",
-    },
-    {
-      id: "8",
-      name: "Mountain Lodge",
-      location: "Pine Street, Aspen CO 81611",
-      price: 200.0,
-      image:
-        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=500",
-    },
-    {
-      id: "9",
-      name: "Urban Loft",
-      location: "Broadway, New York NY 10012",
-      price: 180.0,
-      image:
-        "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=500",
-    },
-  ];
-
-  // Selected hotel for detail sidebar
-  const selectedHotel = {
-    id: "3",
-    name: "Novotel Phuket City",
-    images: [
-      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800",
-      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=400",
-      "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400",
-    ],
-    description:
-      "Choose between our 8 bedrooms, many with seaviews and relaxing sun terraces. The Isle of Wight offers over 500 miles of footpaths across diverse landscapes.",
-    location: "Phuket City, Thailand",
-  };
-
-  const tabs = [
-    { id: "destination", label: "Destination" },
-    { id: "hotels", label: "Hotels" },
-    { id: "car", label: "Car Rent" },
-    { id: "packages", label: "Packages" },
-  ];
-
-  const filters = [
-    { id: "recommended", label: "Recommended" },
-    { id: "popular", label: "Popular" },
-    { id: "nearest", label: "Nearest" },
   ];
 
   return (
-    <div className="flex-1 bg-gray-50 overflow-y-auto">
-      <div className="max-w-[1600px] mx-auto p-8">
-        <div className="flex gap-8">
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                Hey {user?.fullName || user?.username || "Watson"} !!!
-              </h1>
-              <p className="text-gray-500">
-                Welcome back and explore the world
-              </p>
-            </div>
+    <div className="flex flex-col bg-gray-50 min-h-screen p-4 md:p-8 gap-6">
+      {/* ===== HERO BANNER (BOTTOM OVERLAY, HALF HEIGHT) ===== */}
+      <div className="relative w-full h-64 md:h-96 rounded-3xl overflow-hidden shadow-lg">
+        <Image
+          src="/images/heropup.jpg"
+          alt="Help a stray today"
+          fill
+          className="object-cover"
+        />
 
-            {/* Tabs */}
-            <div className="flex gap-8 mb-6 border-b">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`pb-3 px-2 font-medium transition-all ${
-                    activeTab === tab.id
-                      ? "text-gray-800 border-b-2 border-gray-800"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        {/* Bottom half overlay only */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-black/50 flex flex-col justify-end p-6 md:p-10">
+          <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
+            Help a stray today
+          </h1>
+          <p className="text-white/90 mb-4 max-w-xl">
+            Every small act of kindness makes a huge difference in a life.
+          </p>
 
-            {/* Search Bar */}
-            <div className="flex gap-4 mb-8">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  placeholder="Search Hotel..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-gray-200 focus:border-emerald-500 focus:outline-none bg-white"
-                />
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">
-                  🔍
-                </span>
-              </div>
-              <button className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all">
-                <span className="text-white text-xl">☰</span>
-              </button>
-            </div>
-
-            {/* Filters */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex gap-4">
-                {filters.map((filter) => (
-                  <button
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id as any)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      activeFilter === filter.id
-                        ? "text-gray-800 border-b-2 border-gray-800"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-              <button className="text-emerald-600 font-medium flex items-center gap-2 hover:text-emerald-700">
-                View All <span>→</span>
-              </button>
-            </div>
-
-            {/* Popular Hotels Grid */}
-           
-          </div>
-
-          {/* Right Sidebar - Hotel Details */}
+          {/* Button on bottom-left */}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="self-start bg-red-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-red-700 transition"
+          >
+            Learn More
+          </button>
         </div>
       </div>
+
+      {/* ===== MODAL (FIXED CLOSE BEHAVIOR) ===== */}
+      <Transition appear show={isModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-50"
+          onClose={() => setIsModalOpen(false)}
+        >
+          {/* Background overlay — clicking THIS will close */}
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50" />
+          </Transition.Child>
+
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+                <Dialog.Title className="text-xl font-bold text-gray-900">
+                  Help a Stray
+                </Dialog.Title>
+
+                <Dialog.Description className="mt-2 text-gray-700">
+                  Every small act of kindness can save a life! Volunteer, adopt,
+                  or donate to local shelters.
+                </Dialog.Description>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* ===== ADOPT BAR ===== */}
+      <div className="flex items-center justify-between bg-white p-4 rounded-3xl shadow">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white text-xl">
+            <FaPaw />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">Ready to adopt</h2>
+            <p className="text-gray-600 text-sm">
+              Browse animals waiting for their forever home
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/adopt"
+          className="bg-red-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-red-700 transition"
+        >
+          Adopt
+        </Link>
+      </div>
+
+{/* My Reports Section */}
+<div>
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="font-bold text-gray-800 text-lg">My Reports</h2>
+    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
+      {reports.length}
+    </span>
+  </div>
+
+  {/* GRID instead of column */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+    {reports.map((animal) => (
+      <div
+        key={animal.id}
+        className="bg-white rounded-2xl overflow-hidden shadow"
+      >
+        {/* IMAGE ON TOP */}
+        <div className="w-full h-40 relative">
+          <Image
+            src={animal.image}
+            alt={animal.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        {/* TEXT BELOW */}
+        <div className="p-4">
+          <h3 className="font-bold text-gray-800">{animal.name}</h3>
+          <p className="text-gray-500 text-sm">{animal.location}</p>
+          <p className="text-gray-600 text-sm mt-1">
+            {animal.description}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+
     </div>
   );
 }
+  
