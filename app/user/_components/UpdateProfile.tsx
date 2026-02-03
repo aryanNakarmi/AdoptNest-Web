@@ -29,7 +29,6 @@ export default function UpdateUserForm({ user }: { user: any }) {
 
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (file: File | undefined, onChange: (file: File | undefined) => void) => {
@@ -37,17 +36,12 @@ export default function UpdateUserForm({ user }: { user: any }) {
       const reader = new FileReader();
       reader.onloadend = () => setPreviewImage(reader.result as string);
       reader.readAsDataURL(file);
-      setFileName(file.name);
-    } else {
-      setPreviewImage(null);
-      setFileName(null);
-    }
+    } else setPreviewImage(null);
     onChange(file);
   };
 
   const handleDismissImage = (onChange?: (file: File | undefined) => void) => {
     setPreviewImage(null);
-    setFileName(null);
     onChange?.(undefined);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -75,7 +69,7 @@ export default function UpdateUserForm({ user }: { user: any }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-md">
+    <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-md">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">Update Profile</h1>
       <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -113,65 +107,53 @@ export default function UpdateUserForm({ user }: { user: any }) {
             />
           ) : (
             <div className="w-28 h-28 bg-gray-200 rounded-full flex items-center justify-center border-2 border-gray-300">
-              <span className="text-gray-500 font-medium">No Image</span>
+              <span className="text-gray-500">No Image</span>
             </div>
           )}
-
-          {/* Custom File Input */}
           <Controller
             name="profilePicture"
             control={control}
             render={({ field: { onChange } }) => (
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition shadow-md"
-                >
-                  Choose File
-                </button>
-                <span className="text-gray-700 font-medium">{fileName || "No file chosen"}</span>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={(e) => handleImageChange(e.target.files?.[0], onChange)}
-                  accept=".jpg,.jpeg,.png,.webp"
-                  className="hidden"
-                />
-              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => handleImageChange(e.target.files?.[0], onChange)}
+                accept=".jpg,.jpeg,.png,.webp"
+                className="text-sm text-gray-600"
+              />
             )}
           />
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">Email</label>
+          <label className="block text-sm font-semibold mb-1">Email</label>
           <input
             type="email"
             {...register("email")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900"
+            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
         </div>
 
         {/* Full Name */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">Full Name</label>
+          <label className="block text-sm font-semibold mb-1">Full Name</label>
           <input
             type="text"
             {...register("fullName")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900"
+            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           {errors.fullName && <p className="text-sm text-red-600 mt-1">{errors.fullName.message}</p>}
         </div>
 
         {/* Phone Number */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">Phone Number</label>
+          <label className="block text-sm font-semibold mb-1">Phone Number</label>
           <input
             type="text"
             {...register("phoneNumber")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900"
+            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           {errors.phoneNumber && <p className="text-sm text-red-600 mt-1">{errors.phoneNumber.message}</p>}
         </div>
@@ -180,7 +162,7 @@ export default function UpdateUserForm({ user }: { user: any }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition disabled:opacity-60 shadow-md"
+          className="w-full py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition disabled:opacity-60"
         >
           {isSubmitting ? "Updating..." : "Update Profile"}
         </button>

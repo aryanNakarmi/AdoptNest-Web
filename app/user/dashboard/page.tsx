@@ -1,11 +1,11 @@
+// app/user/dashboard/page.tsx
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { FaPaw } from "react-icons/fa";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 
 export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col bg-gray-50 min-h-screen p-4 md:p-8 gap-6">
+    <>
       {/* ===== HERO BANNER (BOTTOM OVERLAY, HALF HEIGHT) ===== */}
       <div className="relative w-full h-64 md:h-96 rounded-3xl overflow-hidden shadow-lg">
         <Image
@@ -71,14 +71,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ===== MODAL (FIXED CLOSE BEHAVIOR) ===== */}
+      {/* ===== MODAL ===== */}
       <Transition appear show={isModalOpen} as={Fragment}>
         <Dialog
           as="div"
           className="fixed inset-0 z-50"
           onClose={() => setIsModalOpen(false)}
         >
-          {/* Background overlay — clicking THIS will close */}
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -146,47 +145,43 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-{/* My Reports Section */}
-<div>
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="font-bold text-gray-800 text-lg">My Reports</h2>
-    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
-      {reports.length}
-    </span>
-  </div>
-
-  {/* GRID instead of column */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-    {reports.map((animal) => (
-      <div
-        key={animal.id}
-        className="bg-white rounded-2xl overflow-hidden shadow"
-      >
-        {/* IMAGE ON TOP */}
-        <div className="w-full h-40 relative">
-          <Image
-            src={animal.image}
-            alt={animal.name}
-            fill
-            className="object-cover"
-          />
+      {/* ===== My Reports Section ===== */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-bold text-gray-800 text-lg">My Reports</h2>
+          <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
+            {reports.length}
+          </span>
         </div>
 
-        {/* TEXT BELOW */}
-        <div className="p-4">
-          <h3 className="font-bold text-gray-800">{animal.name}</h3>
-          <p className="text-gray-500 text-sm">{animal.location}</p>
-          <p className="text-gray-600 text-sm mt-1">
-            {animal.description}
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {reports.map((animal) => (
+            <div
+              key={animal.id}
+              className="bg-white rounded-2xl overflow-hidden shadow"
+            >
+              {/* IMAGE ON TOP */}
+              <div className="w-full h-40 relative">
+                <Image
+                  src={animal.image}
+                  alt={animal.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* TEXT BELOW */}
+              <div className="p-4">
+                <h3 className="font-bold text-gray-800">{animal.name}</h3>
+                <p className="text-gray-500 text-sm">{animal.location}</p>
+                <p className="text-gray-600 text-sm mt-1">
+                  {animal.description}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    ))}
-  </div>
-</div>
-
-
-    </div>
+    </>
   );
 }
-  

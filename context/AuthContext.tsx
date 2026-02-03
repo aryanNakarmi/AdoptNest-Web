@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { clearAuthCookies, getAuthToken, getUserData } from "@/lib/cookie";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+
     const checkAuth = async () => {
         try {
             const token = await getAuthToken();
@@ -39,26 +40,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const logout = async () => {
-        try {
-            await clearAuthCookies();
-            setIsAuthenticated(false);
-            setUser(null);
-            router.push("/");
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    }
+        await clearAuthCookies();
+        setUser(null);
+        setIsAuthenticated(false);
+        router.push("/"); // client-side redirect
+    };
 
     return (
         <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, user, setUser, logout, loading, checkAuth }}>
             {children}
         </AuthContext.Provider>
     );
-}
+};
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
+    if (!context) throw new Error("useAuth must be used within AuthProvider");
     return context;
 };

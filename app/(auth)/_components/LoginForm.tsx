@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LoginData, loginSchema } from "../schema";
 import { handleLogin } from "@/lib/actions/auth-action";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginForm(){
 
@@ -24,30 +25,23 @@ export default function LoginForm(){
     const [pending, setTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
 
-        const submit = async (values: LoginData) => {
-        setError(null);
-        setTransition(async () => {
-            try {
-                const response = await handleLogin(values);
-                if (!response.success) {
-                    throw new Error(response.message);
-                }
-                if (response.success) {
-                    if (response.data?.role == 'admin') {
-                        return router.replace("/admin");
-                    }
-                    if (response.data?.role === 'user') {
-                        return router.replace("/user/dashboard");
-                    }
-                    return router.replace("/");
-                } else {
-                    setError('Login failed');
-                }
-            } catch (err: Error | any) {
-                setError(err.message || 'Login failed');
-            }
-        })
-    };
+   const { setUser, setIsAuthenticated } = useAuth();
+
+    const submit = async (values: LoginData) => {
+    const res = await handleLogin(values);
+    if (!res.success) return alert(res.message);
+
+    setUser(res.data); 
+
+    // redirect based on role
+    const role = res.data.role?.toLowerCase();
+    if (role === "admin") router.replace("/admin");
+    else if (role === "user") router.replace("/user/dashboard");
+    else router.replace("/");
+  };
+
+
+
 
     return(
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">

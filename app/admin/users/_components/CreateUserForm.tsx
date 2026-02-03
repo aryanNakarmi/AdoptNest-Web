@@ -1,215 +1,197 @@
 "use client";
+
 import { Controller, useForm } from "react-hook-form";
 import { UserData, UserSchema } from "@/app/admin/users/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { toast } from "react-toastify";
 import { handleCreateUser } from "@/lib/actions/admin/user-action";
+
 export default function CreateUserForm() {
+  const [pending, startTransition] = useTransition();
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<UserData>({
+    resolver: zodResolver(UserSchema)
+  });
 
-    const [pending, startTransition] = useTransition();
-    const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<UserData>({
-        resolver: zodResolver(UserSchema)
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (file: File | undefined, onChange: (file: File | undefined) => void) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewImage(reader.result as string);
+      reader.readAsDataURL(file);
+      setFileName(file.name);
+    } else {
+      setPreviewImage(null);
+      setFileName(null);
+    }
+    onChange(file);
+  };
+
+  const handleDismissImage = (onChange?: (file: File | undefined) => void) => {
+    setPreviewImage(null);
+    setFileName(null);
+    onChange?.(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const onSubmit = async (data: UserData) => {
+    startTransition(async () => {
+      try {
+        const formData = new FormData();
+        data.fullName && formData.append('fullName', data.fullName);
+        formData.append('email', data.email);
+        formData.append('password', data.password);
+        formData.append('confirmPassword', data.confirmPassword);
+        data.phoneNumber && formData.append('phoneNumber', data.phoneNumber);
+        data.profilePicture && formData.append('profilePicture', data.profilePicture);
+
+        const response = await handleCreateUser(formData);
+        if (!response.success) throw new Error(response.message || 'Create profile failed');
+
+        reset();
+        handleDismissImage();
+        toast.success('Profile Created successfully');
+      } catch (error: any) {
+        toast.error(error.message || 'Create profile failed');
+      }
     });
-    const [error, setError] = useState<string | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  };
 
-    const handleImageChange = (file: File | undefined, onChange: (file: File | undefined) => void) => {
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setPreviewImage(null);
-        }
-        onChange(file);
-    };
+  return (
+    <div className="flex justify-center mt-10">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg border border-gray-200 space-y-6"
+      >
+        <h1 className="text-2xl font-bold text-gray-800 text-center">Create New User</h1>
 
-    const handleDismissImage = (onChange?: (file: File | undefined) => void) => {
-        setPreviewImage(null);
-        onChange?.(undefined);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const onSubmit = async (data: UserData) => {
-        setError(null);
-        startTransition(async () => {
-            try {
-                const formData = new FormData();
-                if (data.fullName) {
-                    formData.append('fullName', data.fullName);
-                }
-
-
-                formData.append('email', data.email);
-                formData.append('password', data.password);
-                formData.append('confirmPassword', data.confirmPassword);
-
-                if (data.phoneNumber) {
-                    formData.append('phoneNumber', data.phoneNumber);
-                }
-
-                if (data.profilePicture) {
-                    formData.append('profilePicture', data.profilePicture);
-                }
-                const response = await handleCreateUser(formData);
-
-                if (!response.success) {
-                    throw new Error(response.message || 'Create profile failed');
-                }
-                reset();
-                handleDismissImage();
-                toast.success('Profile Created successfully');
-
-            } catch (error: Error | any) {
-                toast.error(error.message || 'Create profile failed');
-                setError(error.message || 'Create profile failed');
-            }
-        });
-
-    };
-    console.log(errors);
-    return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Profile Image Display */}
-            <div className="mb-4">
-                {previewImage ? (
-                    <div className="relative w-24 h-24">
-                        <img
-                            src={previewImage}
-                            alt="Profile Image Preview"
-                            className="w-24 h-24 rounded-full object-cover"
-                        />
-                        <Controller
-                            name="profilePicture"
-                            control={control}
-                            render={({ field: { onChange } }) => (
-                                <button
-                                    type="button"
-                                    onClick={() => handleDismissImage(onChange)}
-                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        />
-                    </div>
-                ) : (
-                    <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600">No Image</span>
-                    </div>
+        {/* Profile Image */}
+        <div className="flex flex-col items-center gap-4">
+          {previewImage ? (
+            <div className="relative w-28 h-28">
+              <img
+                src={previewImage}
+                alt="Profile Preview"
+                className="w-28 h-28 rounded-full object-cover border-2 border-red-600"
+              />
+              <Controller
+                name="profilePicture"
+                control={control}
+                render={({ field: { onChange } }) => (
+                  <button
+                    type="button"
+                    onClick={() => handleDismissImage(onChange)}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-700 transition"
+                  >
+                    ✕
+                  </button>
                 )}
-
+              />
             </div>
-            {/* Profile Image Input */}
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Profile Image</label>
-                <Controller
-                    name="profilePicture"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            onChange={(e) => handleImageChange(e.target.files?.[0], onChange)}
-                            accept=".jpg,.jpeg,.png,.webp"
-                        />
-                    )}
-                />
-                {errors.profilePicture && <p className="text-sm text-red-600">{errors.profilePicture.message}</p>}
+          ) : (
+            <div className="w-28 h-28 bg-red-50 rounded-full flex items-center justify-center border-2 border-red-600">
+              <span className="text-red-600 font-bold text-xl">U</span>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                    <label className="text-sm font-medium" htmlFor="fullName">Full Name</label>
-                    <input
-                        id="fullName"
-                        type="text"
-                        autoComplete="given-name"
-                        className="h-10 w-full rounded-md border border-black/10 dark:border-white/15 bg-background px-3 text-sm outline-none focus:border-foreground/40"
-                        {...register("fullName")}
-                        placeholder="Jane"
-                    />
-                    {errors.fullName?.message && (
-                        <p className="text-xs text-red-600">{errors.fullName.message}</p>
-                    )}
-                </div>
-
-            
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="email">Email</label>
+          {/* Custom File Input */}
+          <Controller
+            name="profilePicture"
+            control={control}
+            render={({ field: { onChange } }) => (
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-5 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 cursor-pointer shadow-md font-semibold transition"
+                >
+                  Choose File
+                </button>
+                <span className="text-black font-medium">{fileName || "No file chosen"}</span>
                 <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    className="h-10 w-full rounded-md border border-black/10 dark:border-white/15 bg-background px-3 text-sm outline-none focus:border-foreground/40"
-                    {...register("email")}
-                    placeholder="you@example.com"
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={(e) => handleImageChange(e.target.files?.[0], onChange)}
+                  accept=".jpg,.jpeg,.png,.webp"
+                  className="hidden"
                 />
-                {errors.email?.message && (
-                    <p className="text-xs text-red-600">{errors.email.message}</p>
-                )}
-            </div>
+              </div>
+            )}
+          />
+        </div>
 
-            <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="phoneNumber">Phone Number</label>
-                <input
-                    id="phoneNumber"
-                    type="text"
-                    autoComplete="username"
-                    className="h-10 w-full rounded-md border border-black/10 dark:border-white/15 bg-background px-3 text-sm outline-none focus:border-foreground/40"
-                    {...register("phoneNumber")}
-                    placeholder="Jane Doe"
-                />
-                {errors.phoneNumber?.message && (
-                    <p className="text-xs text-red-600">{errors.phoneNumber.message}</p>
-                )}
-            </div>
-            <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    className="h-10 w-full rounded-md border border-black/10 dark:border-white/15 bg-background px-3 text-sm outline-none focus:border-foreground/40"
-                    {...register("password")}
-                    placeholder="••••••"
-                />
-                {errors.password?.message && (
-                    <p className="text-xs text-red-600">{errors.password.message}</p>
-                )}
-            </div>
+        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-medium mb-1 text-black">Full Name</label>
+          <input
+            type="text"
+            {...register("fullName")}
+            placeholder="Jane Doe"
+            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+          />
+          {errors.fullName && <p className="text-sm text-red-600 mt-1">{errors.fullName.message}</p>}
+        </div>
 
-            <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="confirmPassword">Confirm password</label>
-                <input
-                    id="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    className="h-10 w-full rounded-md border border-black/10 dark:border-white/15 bg-background px-3 text-sm outline-none focus:border-foreground/40"
-                    {...register("confirmPassword")}
-                    placeholder="••••••"
-                />
-                {errors.confirmPassword?.message && (
-                    <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
-                )}
-            </div>
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium mb-1 text-black">Email</label>
+          <input
+            type="email"
+            {...register("email")}
+            placeholder="you@example.com"
+            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+          />
+          {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+        </div>
 
-            <button
-                type="submit"
-                disabled={isSubmitting || pending}
-                className="h-10 w-full rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 disabled:opacity-60"
-            >
-                {isSubmitting || pending ? "Creating account..." : "Create account"}
-            </button>
-        </form>
-    );
+        {/* Phone */}
+        <div>
+          <label className="block text-sm font-medium mb-1 text-black">Phone Number</label>
+          <input
+            type="text"
+            {...register("phoneNumber")}
+            placeholder="+977 98XXXXXXXX"
+            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+          />
+          {errors.phoneNumber && <p className="text-sm text-red-600 mt-1">{errors.phoneNumber.message}</p>}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block text-sm font-medium mb-1 text-black">Password</label>
+          <input
+            type="password"
+            {...register("password")}
+            placeholder="••••••"
+            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+          />
+          {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="block text-sm font-medium mb-1 text-black">Confirm Password</label>
+          <input
+            type="password"
+            {...register("confirmPassword")}
+            placeholder="••••••"
+            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+          />
+          {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting || pending}
+          className="w-full h-12 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition disabled:opacity-60 shadow-md"
+        >
+          {isSubmitting || pending ? "Creating account..." : "Create User"}
+        </button>
+      </form>
+    </div>
+  );
 }
