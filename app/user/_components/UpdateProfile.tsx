@@ -1,25 +1,29 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import {  useState, useRef } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { handleUpdateProfile } from "@/lib/actions/auth-action";
-
 import { z } from "zod";
-import { UpdateUserData, updateUserSchema } from "../schema";
 
-export default function UpdateUserForm({
-    user
-}: { user: any }) {
+const updateUserSchema = z.object({
+    fullName: z.string().optional(),
+    email: z.string().email().optional(),
+    phoneNumber: z.string().optional(),
+    profilePicture: z.instanceof(File).optional(),
+});
+
+type UpdateUserData = z.infer<typeof updateUserSchema>;
+
+export default function UpdateUserForm({ user }: { user: any }) {
     const { register, handleSubmit, control, formState: { errors, isSubmitting } } =
         useForm<UpdateUserData>({
             resolver: zodResolver(updateUserSchema),
             values: {
-                firstName: user?.firstName || '',
-                lastName: user?.lastName || '',
+                fullName: user?.fullName || '',
                 email: user?.email || '',
-                username: user?.username || ''
+                phoneNumber: user?.phoneNumber || '',
             }
         });
 
@@ -52,13 +56,13 @@ export default function UpdateUserForm({
         setError(null);
         try {
             const formData = new FormData();
-            formData.append('firstName', data.firstName);
-            formData.append('lastName', data.lastName);
-            formData.append('email', data.email);
-            formData.append('username', data.username);
-            if (data.image) {
-                formData.append('image', data.image);
+            if (data.fullName) formData.append('fullName', data.fullName);
+            if (data.email) formData.append('email', data.email);
+            if (data.phoneNumber) formData.append('phoneNumber', data.phoneNumber);
+            if (data.profilePicture) {
+                formData.append('profilePicture', data.profilePicture);
             }
+
             const response = await handleUpdateProfile(formData);
             
             if (!response.success) {
@@ -77,13 +81,11 @@ export default function UpdateUserForm({
         <div>
             <h1 className="text-2xl font-bold mb-4">Profile Page</h1>
             <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-                {error && (
-                    <p className="text-sm text-red-600">{error}</p>
-                )}
+                {error && <p className="text-sm text-red-600">{error}</p>}
 
                 {/* Profile Image Display */}
                 <div className="mb-4">
-                    { previewImage ? (
+                    {previewImage ? (
                         <div className="relative w-24 h-24">
                             <img
                                 src={previewImage}
@@ -91,7 +93,7 @@ export default function UpdateUserForm({
                                 className="w-24 h-24 rounded-full object-cover"
                             />
                             <Controller
-                                name="image"
+                                name="profilePicture"
                                 control={control}
                                 render={({ field: { onChange } }) => (
                                     <button
@@ -104,9 +106,9 @@ export default function UpdateUserForm({
                                 )}
                             />
                         </div>
-                    ) : user?.imageUrl ? (
+                    ) : user?.profilePicture ? (
                         <Image
-                            src={process.env.NEXT_PUBLIC_API_BASE_URL + user.imageUrl}
+                            src={process.env.NEXT_PUBLIC_API_BASE_URL + user.profilePicture}
                             alt="Profile Image"
                             width={100}
                             height={100}
@@ -123,7 +125,7 @@ export default function UpdateUserForm({
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-1">Profile Image</label>
                     <Controller
-                        name="image"
+                        name="profilePicture"
                         control={control}
                         render={({ field: { onChange } }) => (
                             <input
@@ -134,18 +136,9 @@ export default function UpdateUserForm({
                             />
                         )}
                     />
-                    {errors.image && <p className="text-sm text-red-600">{errors.image.message}</p>}
+                    {errors.profilePicture && <p className="text-sm text-red-600">{errors.profilePicture.message}</p>}
                 </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="username">Username</label>
-                    <input
-                        id="username"
-                        type="text"
-                        {...register("username")}
-                        className="w-full border border-gray-300 rounded px-3 py-2"
-                    />
-                    {errors.username && <p className="text-sm text-red-600">{errors.username.message}</p>}
-                </div>
+
                 <div>
                     <label className="block text-sm font-medium mb-1" htmlFor="email">Email</label>
                     <input
@@ -156,31 +149,29 @@ export default function UpdateUserForm({
                     />
                     {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
                 </div>
-                {/* First Name Input */}
+
                 <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="firstName">First Name</label>
+                    <label className="block text-sm font-medium mb-1" htmlFor="fullName">Full Name</label>
                     <input
-                        id="firstName"
+                        id="fullName"
                         type="text"
-                        {...register("firstName")}
+                        {...register("fullName")}
                         className="w-full border border-gray-300 rounded px-3 py-2"
                     />
-                    {errors.firstName && <p className="text-sm text-red-600">{errors.firstName.message}</p>}
+                    {errors.fullName && <p className="text-sm text-red-600">{errors.fullName.message}</p>}
                 </div>
 
-                {/* Last Name Input */}
                 <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="lastName">Last Name</label>
+                    <label className="block text-sm font-medium mb-1" htmlFor="phoneNumber">Phone Number</label>
                     <input
-                        id="lastName"
+                        id="phoneNumber"
                         type="text"
-                        {...register("lastName")}
+                        {...register("phoneNumber")}
                         className="w-full border border-gray-300 rounded px-3 py-2"
                     />
-                    {errors.lastName && <p className="text-sm text-red-600">{errors.lastName.message}</p>}
+                    {errors.phoneNumber && <p className="text-sm text-red-600">{errors.phoneNumber.message}</p>}
                 </div>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={isSubmitting}

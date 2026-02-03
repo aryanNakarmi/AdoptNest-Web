@@ -52,19 +52,22 @@ export const handleLogout = async () => {
 
 
 export async function handleUpdateProfile(profileData: FormData) {
-    try {
-        const result = await updateProfile(profileData);
-        if (result.success) {
-            await setUserData(result.data); // update cookie 
-            revalidatePath('/user/profile'); // revalidate profile page/ refresh new data
-            return {
-                success: true,
-                message: 'Profile updated successfully',
-                data: result.data
-            };
-        }
-        return { success: false, message: result.message || 'Failed to update profile' };
-    } catch (error: Error | any) {
-        return { success: false, message: error.message };
+  try {
+    const result = await updateProfile(profileData);
+    if (result.success) {
+      await setUserData(result.data); // update cookie
+      revalidatePath("/user/profile"); // revalidate profile page/ refresh new data
+      return {
+        success: true,
+        message: "Profile updated successfully",
+        data: result.data,
+      };
     }
+    return {
+      success: false,
+      message: result.message || "Failed to update profile",
+    };
+  } catch (error: Error | any) {
+    return { success: false, message: error.message };
+  }
 }

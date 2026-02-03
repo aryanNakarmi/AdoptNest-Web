@@ -30,12 +30,13 @@ export const updateProfile = async (profileData: FormData) => {
                     'Content-Type': 'multipart/form-data',
                 }
             }
-        )
-        return response.data
+        );
+        return response.data;
     } catch (error: Error | any) {
-        throw new Error(error.response?.data?.message || error.message || 'Update profile failed')
+        throw new Error(error.response?.data?.message || error.message || 'Update profile failed');
     }
-}
+};
+
 
 
 
