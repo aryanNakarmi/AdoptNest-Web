@@ -1,5 +1,5 @@
 "use server";
-import { createUser } from '@/lib/api/admin/user';
+import { createUser } from "@/lib/api/admin/user";
 import { revalidatePath } from 'next/cache';
 
 export const handleCreateUser = async (data: FormData) => {
