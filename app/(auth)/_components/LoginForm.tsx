@@ -24,10 +24,8 @@ export default function LoginForm(){
     const [pending, setTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
 
-    const submit = async (values: LoginData) => {
+        const submit = async (values: LoginData) => {
         setError(null);
-
-        // GOTO
         setTransition(async () => {
             try {
                 const response = await handleLogin(values);
@@ -35,7 +33,13 @@ export default function LoginForm(){
                     throw new Error(response.message);
                 }
                 if (response.success) {
-                    router.push("/dashboard");
+                    if (response.data?.role == 'admin') {
+                        return router.replace("/admin");
+                    }
+                    if (response.data?.role === 'user') {
+                        return router.replace("/user/dashboard");
+                    }
+                    return router.replace("/");
                 } else {
                     setError('Login failed');
                 }
@@ -44,6 +48,7 @@ export default function LoginForm(){
             }
         })
     };
+
     return(
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
             <div className="space-y-3 w-full">

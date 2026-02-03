@@ -47,6 +47,7 @@ export default function RegisterForm(){
     
     return (
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
+            { error && <div>{error}</div> } 
             <div className="space-y-2 w-full max-h-[600px] overflow-y-auto pr-2">
                 {/* Logo */}
                 <div className="flex items-center justify-center mb-4 lg:hidden">

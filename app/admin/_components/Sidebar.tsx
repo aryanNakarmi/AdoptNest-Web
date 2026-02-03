@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ADMIN_LINKS = [
-    { href: "/admin", label: "Dashboard"},
-    { href: "/admin/users", label: "Users"},
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/users", label: "Users" },
 ];
 
 export default function Sidebar() {
@@ -34,17 +34,17 @@ export default function Sidebar() {
                 <nav className="p-2 space-y-1">
                     {
                         ADMIN_LINKS.map(link => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(link.href)
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(link.href)
                                     ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`}
-                        >
-                            <span>{link.label}</span>
-                        </Link >
-                    ))
+                                    }`}
+                            >
+                                <span>{link.label}</span>
+                            </Link >
+                        ))
                     }
                 </nav >
             </aside >
