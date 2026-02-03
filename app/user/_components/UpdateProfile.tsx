@@ -71,6 +71,8 @@ export default function UpdateUserForm({ user }: { user: any }) {
 
             handleDismissImage();
             toast.success('Profile updated successfully');
+
+            window.location.reload();
         } catch (error: Error | any) {
             toast.error(error.message || 'Profile update failed');
             setError(error.message || 'Profile update failed');

@@ -26,6 +26,11 @@ const config: NextConfig = {
         port: '5050',
         pathname: '/profile_pictures/**',
       },
+      {
+        protocol: 'http',
+        hostname: '**',  
+        pathname: '/**',
+      },
     ]
   },
 }
