@@ -138,7 +138,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <Link
-          href="/adopt"
+          href="/user/adopt"
           className="bg-red-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-red-700 transition"
         >
           Adopt

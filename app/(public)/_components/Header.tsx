@@ -19,21 +19,22 @@
             <div className="flex h-14 items-center justify-between w-full">
             {/* Left: Logo */}
             <div className="flex items-center gap-2 justify-start">
-                <a href="/" className="flex items-center gap-2 group">
-                <span >
-                    <Image
-                    src="/images/logo.png"
-                    alt="
-                    AdoptNest"
-                    height={50}
-                    width={50}      
+               <Link href="/" className="flex items-center gap-2 group">
 
-                    />
-                </span>
+             <div className="relative w-10 h-10">
+            <Image
+                src="/images/logo.png"
+                alt="AdoptNest"
+                fill
+                sizes="40px"
+                className="object-contain"
+            />
+            </div>
+
                 <span className="text-base font-semibold tracking-tight group-hover:opacity-80 transition-opacity">
                     AdoptNest
                 </span>
-                </a>
+                </Link>
             </div>
 
             {/* Center: Desktop Nav */}
