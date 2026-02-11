@@ -1,5 +1,6 @@
 import ResetPasswordForm from "../_components/ResetPasswordForm";
 
+
 export default async function Page({
     searchParams
 }: {

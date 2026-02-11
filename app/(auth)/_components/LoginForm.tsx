@@ -1,3 +1,5 @@
+// app/(auth)/_components/LoginForm.tsx
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -25,20 +27,20 @@ export default function LoginForm(){
     const [pending, setTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
 
-   const { setUser, setIsAuthenticated } = useAuth();
+    const { setUser, setIsAuthenticated } = useAuth();
 
     const submit = async (values: LoginData) => {
-    const res = await handleLogin(values);
-    if (!res.success) return alert(res.message);
+        const res = await handleLogin(values);
+        if (!res.success) return alert(res.message);
 
-    setUser(res.data); 
+        setUser(res.data); 
 
-    // redirect based on role
-    const role = res.data.role?.toLowerCase();
-    if (role === "admin") router.replace("/admin");
-    else if (role === "user") router.replace("/user/dashboard");
-    else router.replace("/");
-  };
+        // redirect based on role
+        const role = res.data.role?.toLowerCase();
+        if (role === "admin") router.replace("/admin");
+        else if (role === "user") router.replace("/user/dashboard");
+        else router.replace("/");
+    };
 
 
 
@@ -83,7 +85,12 @@ export default function LoginForm(){
                         <label htmlFor="password" className="text-sm font-medium text-gray-900">
                             Password
                         </label>
-                      
+                        <Link 
+                            href="/request-password-reset"
+                            className="text-xs text-orange-500 hover:text-orange-600 font-semibold"
+                        >
+                            Forgot?
+                        </Link>
                     </div>
                     <input type="password"
                     id="password"

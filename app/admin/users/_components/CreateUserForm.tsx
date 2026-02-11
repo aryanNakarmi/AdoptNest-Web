@@ -6,9 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "react-toastify";
 import { handleCreateUser } from "@/lib/actions/admin/user-action";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function CreateUserForm() {
   const [pending, startTransition] = useTransition();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<UserData>({
     resolver: zodResolver(UserSchema)
   });
@@ -162,25 +166,53 @@ export default function CreateUserForm() {
         {/* Password */}
         <div>
           <label className="block text-sm font-medium mb-1 text-black">Password</label>
-          <input
-            type="password"
-            {...register("password")}
-            placeholder="••••••"
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              {...register("password")}
+              placeholder="••••••"
+              className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <HiEyeOff size={20} /> : <HiEye size={20} />}
+            </button>
+          </div>
           {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
         </div>
 
         {/* Confirm Password */}
         <div>
           <label className="block text-sm font-medium mb-1 text-black">Confirm Password</label>
-          <input
-            type="password"
-            {...register("confirmPassword")}
-            placeholder="••••••"
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
-          />
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              {...register("confirmPassword")}
+              placeholder="••••••"
+              className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showConfirmPassword ? <HiEyeOff size={20} /> : <HiEye size={20} />}
+            </button>
+          </div>
           {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
+        </div>
+
+        {/* Password Requirements */}
+        <div className="bg-blue-50 rounded-lg p-3 space-y-1">
+          <p className="text-xs font-medium text-blue-900">Password requirements:</p>
+          <ul className="text-xs text-blue-800 space-y-0.5 list-disc list-inside">
+            <li>At least 6 characters</li>
+            <li>One uppercase letter (A-Z)</li>
+            <li>One number (0-9)</li>
+          </ul>
         </div>
 
         {/* Submit Button */}

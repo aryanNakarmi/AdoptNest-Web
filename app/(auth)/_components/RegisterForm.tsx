@@ -8,9 +8,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { handleRegister } from "@/lib/actions/auth-action";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function RegisterForm(){
     const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const{
         register,
         handleSubmit,
@@ -47,8 +51,8 @@ export default function RegisterForm(){
     
     return (
         <form onSubmit={handleSubmit(submit)} className="w-full max-w-md">
-            { error && <div>{error}</div> } 
-            <div className="space-y-2 w-full max-h-[600px] overflow-y-auto pr-2">
+            { error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm mb-4">{error}</div> } 
+            <div className="space-y-2 w-full max-h-[700px] overflow-y-auto pr-2">
                 {/* Logo */}
                 <div className="flex items-center justify-center mb-4 lg:hidden">
                     
@@ -133,20 +137,30 @@ export default function RegisterForm(){
                     {/* Password */}
                     <div className="space-y-1">
                         <label htmlFor="password" className="text-sm font-medium text-gray-900">Password</label>
-                        <input type="password"
-                        id="password"
-                        autoComplete="new-password"
-                        {...register("password")}
-                        className="w-full px-4 h-12 rounded-full 
-                        border-2 border-gray-300
-                        text-gray-900
-                        placeholder:text-gray-500
-                        focus:border-teal-500
-                        focus:outline-none
-                        text-sm
-                        transition-colors"
-                        placeholder="••••••••" 
-                        />
+                        <div className="relative">
+                            <input type={showPassword ? "text" : "password"}
+                            id="password"
+                            autoComplete="new-password"
+                            {...register("password")}
+                            className="w-full px-4 h-12 rounded-full 
+                            border-2 border-gray-300
+                            text-gray-900
+                            placeholder:text-gray-500
+                            focus:border-teal-500
+                            focus:outline-none
+                            text-sm
+                            transition-colors
+                            pr-10"
+                            placeholder="••••••••" 
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showPassword ? <HiEyeOff size={18} /> : <HiEye size={18} />}
+                            </button>
+                        </div>
                         <div className="h-3">
                         {errors.password?.message && (
                             <p className="text-xs text-red-600">{errors.password.message}</p>
@@ -157,20 +171,30 @@ export default function RegisterForm(){
                     {/* Confirm Password */}
                     <div className="space-y-1">
                         <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">Confirm Password</label>
-                        <input type="password"
-                        id="confirmPassword"
-                        autoComplete="new-password"
-                        {...register("confirmPassword")}
-                        className="w-full px-4 h-12 rounded-full 
-                        border-2 border-gray-300
-                        text-gray-900
-                        placeholder:text-gray-500
-                        focus:border-teal-500
-                        focus:outline-none
-                        text-sm
-                        transition-colors"
-                        placeholder="••••••••" 
-                        />
+                        <div className="relative">
+                            <input type={showConfirmPassword ? "text" : "password"}
+                            id="confirmPassword"
+                            autoComplete="new-password"
+                            {...register("confirmPassword")}
+                            className="w-full px-4 h-12 rounded-full 
+                            border-2 border-gray-300
+                            text-gray-900
+                            placeholder:text-gray-500
+                            focus:border-teal-500
+                            focus:outline-none
+                            text-sm
+                            transition-colors
+                            pr-10"
+                            placeholder="••••••••" 
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showConfirmPassword ? <HiEyeOff size={18} /> : <HiEye size={18} />}
+                            </button>
+                        </div>
                         <div className="h-3">
                         {errors.confirmPassword?.message && (
                             <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
@@ -178,6 +202,8 @@ export default function RegisterForm(){
                         </div>
                     </div>
                 </div>
+
+             
 
                 {/* Register Button */}
                 <button

@@ -1,82 +1,245 @@
+// app/admin/users/page.tsx
+
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import UserTable from "./_components/UserTable";
 import { toast } from "react-toastify";
+import { deleteUserById, fetchUsers } from "@/lib/api/admin/user";
 
-const DUMMY_USERS = [
-    {
-        _id: "1",
-        email: "john@example.com",
-        username: "john_doe",
-        fullName: "John Doe",
-        role: "admin",
-        imageUrl: "/profile_pictures/john.jpg",
-        createdAt: "2024-01-15T10:30:00Z"
-    },
-    {
-        _id: "2",
-        email: "jane@example.com",
-        username: "jane_smith",
-        fullName: "Jane Smith",
-        role: "user",
-        imageUrl: "/profile_pictures/jane.jpg",
-        createdAt: "2024-01-20T14:45:00Z"
-    },
-    {
-        _id: "3",
-        email: "bob@example.com",
-        username: "bob_wilson",
-        fullName: "Bob Wilson",
-        role: "user",
-        createdAt: "2024-02-01T09:15:00Z"
-    }
-];
+
+const PAGE_SIZE = 10; // Users per page
+
+interface User {
+  _id: string;
+  fullName?: string;
+  email: string;
+  phoneNumber?: string;
+  profilePicture?: string | null;
+  role: string;
+  createdAt: string;
+}
+
+interface PaginationData {
+  page: number;
+  size: number;
+  total: number;
+  totalPages: number;
+}
 
 export default function Page() {
-    const [users, setUsers] = useState(DUMMY_USERS);
-    const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-    // Uncomment to fetch real users from API
-    /*
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await getUsers();
-                if (response.success) {
-                    setUsers(response.data);
-                } else {
-                    toast.error('Failed to fetch users');
-                }
-            } catch (error: Error | any) {
-                toast.error(error.message || 'Failed to fetch users');
-            } finally {
-                setLoading(false);
-            }
-        };
+  // Fetch users with pagination
+  const fetchUsersList = useCallback(
+    async (page: number = 1, search: string = "") => {
+      try {
+        setLoading(true);
+        const response = await fetchUsers(page, PAGE_SIZE, search);
+        
+        if (response.success) {
+          setUsers(response.data || []);
+          setPagination(response.pagination || null);
+          setCurrentPage(page);
+        } else {
+          toast.error(response.message || "Failed to fetch users");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Failed to fetch users");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-        fetchUsers();
-    }, []);
-    */
+  // Initial load
+  useEffect(() => {
+    fetchUsersList(1, "");
+  }, [fetchUsersList]);
 
-    if (loading) {
-        return <div className="text-center py-8">Loading users...</div>;
+  // Handle search with debounce
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
     }
 
-    return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Users</h1>
-                <Link 
-                    className="text-blue-500 border border-blue-500 p-2 rounded inline-block hover:bg-blue-50"
-                    href="/admin/users/create"
-                >
-                    Create User
-                </Link>
-            </div>
-            
-            <UserTable users={users} />
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      fetchUsersList(1, value); // Reset to page 1 when searching
+    }, 500); // Wait 500ms after user stops typing
+
+    setSearchTimeout(timeout);
+  };
+
+  // Handle pagination
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      fetchUsersList(currentPage - 1, searchQuery);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination && currentPage < pagination.totalPages) {
+      fetchUsersList(currentPage + 1, searchQuery);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    if (pagination && page >= 1 && page <= pagination.totalPages) {
+      fetchUsersList(page, searchQuery);
+    }
+  };
+
+  // Handle delete
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await deleteUserById(userId);
+      
+      if (response.success) {
+        toast.success(`${userName} deleted successfully`);
+        fetchUsersList(currentPage, searchQuery); // Refresh the list
+      } else {
+        toast.error(response.message || "Failed to delete user");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete user");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+        <Link 
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold"
+          href="/admin/users/create"
+        >
+          + Create User
+        </Link>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm">
+        <input
+          type="text"
+          placeholder="Search by name, email, or phone number..."
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+        />
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <p className="mt-2">Loading users...</p>
         </div>
-    );
+      )}
+
+      {/* Users Table */}
+      {!loading && users.length > 0 && (
+        <>
+          <UserTable 
+            users={users} 
+            onDelete={handleDeleteUser}
+          />
+
+          {/* Pagination Controls */}
+          {pagination && (
+            <div className="flex items-center justify-between mt-6 p-4 bg-white rounded-xl border border-red-100">
+              {/* Left - Info */}
+              <div className="text-sm text-gray-600">
+                Showing <span className="font-semibold text-gray-900">{users.length}</span> of{" "}
+                <span className="font-semibold text-gray-900">{pagination.total}</span> users
+              </div>
+
+              {/* Center - Page Numbers */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  ← Previous
+                </button>
+
+                {/* Page Number Buttons */}
+                {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                  let pageNum: number;
+                  if (pagination.totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= pagination.totalPages - 2) {
+                    pageNum = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                        currentPage === pageNum
+                          ? "bg-red-600 text-white"
+                          : "border border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage >= pagination.totalPages}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next →
+                </button>
+              </div>
+
+              {/* Right - Total Pages */}
+              <div className="text-sm text-gray-600">
+                Page <span className="font-semibold text-gray-900">{currentPage}</span> of{" "}
+                <span className="font-semibold text-gray-900">{pagination.totalPages}</span>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Empty State */}
+      {!loading && users.length === 0 && (
+        <div className="text-center py-12 border border-red-100 rounded-xl bg-red-50">
+          <p className="text-gray-500 text-lg">No users found</p>
+          {searchQuery && (
+            <button
+              onClick={() => handleSearch("")}
+              className="text-red-600 hover:text-red-700 mt-2 underline"
+            >
+              Clear search
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

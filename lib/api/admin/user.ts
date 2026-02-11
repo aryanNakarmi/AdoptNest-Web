@@ -64,3 +64,20 @@ export const getUserById = async (userId: string) => {
     throw new Error(error.response?.data?.message || error.message || 'Fetch user failed');
   }
 };
+
+export const updateUser = async (userId: string, userData: any) => {
+  try {
+    const response = await axios.put(
+      `/api/v1/admin/users/${userId}`,
+      userData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+    return response.data;
+  } catch (error: Error | any) {
+    throw new Error(error.response?.data?.message || error.message || 'Update user failed');
+  }
+};
