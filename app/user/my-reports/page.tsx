@@ -1,5 +1,3 @@
-// app/user/my-reports/page.tsx
-
 "use client";
 
 import Image from "next/image";

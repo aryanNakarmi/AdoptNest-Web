@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { HiUsers, HiCog, HiLogout } from "react-icons/hi";
+import { HiUsers, HiCog, HiLogout, HiClipboardList } from "react-icons/hi";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -13,6 +13,7 @@ export default function Sidebar() {
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: <HiCog size={22} /> },
     { href: "/admin/users", label: "Users", icon: <HiUsers size={22} /> },
+    { href: "/admin/reports", label: "Reports", icon: <HiClipboardList size={22} /> },
   ];
 
   return (

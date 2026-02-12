@@ -169,6 +169,7 @@ export default function CreateUserForm() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               {...register("password")}
               placeholder="••••••"
               className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black pr-12"

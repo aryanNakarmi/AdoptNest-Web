@@ -162,9 +162,9 @@ export default function Page() {
           {pagination && (
             <div className="flex items-center justify-between mt-6 p-4 bg-white rounded-xl border border-red-100">
               {/* Left - Info */}
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-gray-900">{users.length}</span> of{" "}
-                <span className="font-semibold text-gray-900">{pagination.total}</span> users
+              <div className="text-sm text-gray-500">
+                Showing <span className="font-semibold text-gray-500">{users.length}</span> of{" "}
+                <span className="font-semibold text-gray-500">{pagination.total}</span> users
               </div>
 
               {/* Center - Page Numbers */}
@@ -172,7 +172,7 @@ export default function Page() {
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-gray-500"
                 >
                   ← Previous
                 </button>
@@ -197,7 +197,7 @@ export default function Page() {
                       className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
                         currentPage === pageNum
                           ? "bg-red-600 text-white"
-                          : "border border-gray-300 hover:bg-gray-50"
+                          : "border border-gray-300 text-gray-500 hover:bg-gray-50"
                       }`}
                     >
                       {pageNum}
@@ -208,16 +208,16 @@ export default function Page() {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage >= pagination.totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-gray-500"
                 >
                   Next →
                 </button>
               </div>
 
               {/* Right - Total Pages */}
-              <div className="text-sm text-gray-600">
-                Page <span className="font-semibold text-gray-900">{currentPage}</span> of{" "}
-                <span className="font-semibold text-gray-900">{pagination.totalPages}</span>
+              <div className="text-sm text-gray-500">
+                Page <span className="font-semibold text-gray-500">{currentPage}</span> of{" "}
+                <span className="font-semibold text-gray-500">{pagination.totalPages}</span>
               </div>
             </div>
           )}

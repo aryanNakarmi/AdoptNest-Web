@@ -68,13 +68,15 @@ export default function UserTable({ users, onDelete }: UserTableProps) {
             <tr key={user._id} className="hover:bg-red-50 transition">
               <td className="px-4 py-3">
                 {user.profilePicture ? (
-                  <Image
-                    src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${user.profilePicture}`}
-                    alt={user.fullName || ""}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                  />
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${user.profilePicture}`}
+                      alt={user.fullName || ""}
+                      fill
+                      sizes="40px"
+                      className="rounded-full object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                     <span className="text-black text-xs font-bold">
