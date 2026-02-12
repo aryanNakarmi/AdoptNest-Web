@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { HiEye } from "react-icons/hi";
 
 export interface User {
   _id: string;
@@ -35,8 +36,8 @@ export default function UserTable({ users, onDelete }: UserTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto w-full">
-      <table className="min-w-[700px] w-full border border-red-100 rounded-xl bg-white overflow-hidden">
+    <div className="overflow-x-auto w-full rounded-xl border border-red-100 bg-white">
+      <table className="min-w-full w-full">
         <thead className="bg-red-50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">
@@ -66,22 +67,21 @@ export default function UserTable({ users, onDelete }: UserTableProps) {
           {users.map((user) => (
             <tr key={user._id} className="hover:bg-red-50 transition">
               <td className="px-4 py-3">
-                
-              {user.profilePicture ? (
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${user.profilePicture}`}  
-                  alt={user.fullName || ""}
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 text-xs font-bold">
-                    {user.fullName?.charAt(0).toUpperCase() || "U"}
-                  </span>
-                </div>
-              )}
+                {user.profilePicture ? (
+                  <Image
+                    src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${user.profilePicture}`}
+                    alt={user.fullName || ""}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-black text-xs font-bold">
+                      {user.fullName?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  </div>
+                )}
               </td>
               <td className="px-4 py-3 text-sm font-medium text-gray-900">
                 {user.fullName || "-"}
@@ -106,10 +106,11 @@ export default function UserTable({ users, onDelete }: UserTableProps) {
               </td>
               <td className="px-4 py-3 text-sm flex gap-3">
                 <Link
-                  href={`/admin/users/${user._id}/edit`}
-                  className="text-blue-600 hover:text-blue-800 font-medium transition"
+                  href={`/admin/users/${user._id}`}
+                  className="text-blue-600 hover:text-blue-800 font-medium transition inline-flex items-center gap-1"
                 >
-                  Edit
+                  <HiEye size={16} />
+                  View
                 </Link>
                 <button
                   onClick={() => onDelete(user._id, user.fullName || user.email)}

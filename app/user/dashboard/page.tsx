@@ -1,54 +1,75 @@
-// app/user/dashboard/page.tsx
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { FaPaw } from "react-icons/fa";
+import { HiArrowRight } from "react-icons/hi";
 import { Dialog, Transition } from "@headlessui/react";
+import { toast } from "react-toastify";
+import { getMyReports } from "@/lib/api/animal-report/animal-report";
+
+interface AnimalReport {
+  _id: string;
+  species: string;
+  location: string;
+  description?: string;
+  imageUrl: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reports, setReports] = useState<AnimalReport[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const reports = [
-    {
-      id: 1,
-      name: "Buddy",
-      location: "Kathmandu, Nepal",
-      description: "Friendly stray dog found near the park.",
-      image: "/images/dogimage.png",
-    },
-    {
-      id: 2,
-      name: "Luna",
-      location: "Lalitpur, Nepal",
-      description: "Young cat rescued from the street.",
-      image: "/images/cat.png",
-    },
-    {
-      id: 3,
-      name: "Snowy",
-      location: "Bhaktapur, Nepal",
-      description: "White street dog needs shelter.",
-      image: "/images/dog3.jpg",
-    },
-    {
-      id: 4,
-      name: "Misty",
-      location: "Pokhara, Nepal",
-      description: "Stray kitten looking for a home.",
-      image: "/images/catty.jpg",
-    },
-  ];
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        const response = await getMyReports(1, 4); //euta page ma kati dekhaune 
+        
+        if (response.success) {
+          setReports(response.data || []);
+        } else {
+          toast.error(response.message || "Failed to load reports");
+        }
+      } catch (error) {
+        toast.error("Failed to load reports");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "pending":
+      default:
+        return "bg-orange-100 text-orange-800";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
 
   return (
     <>
-      {/* ===== HERO BANNER (BOTTOM OVERLAY, HALF HEIGHT) ===== */}
       <div className="relative w-full h-64 md:h-96 rounded-3xl overflow-hidden shadow-lg">
         <Image
           src="/images/heropup.jpg"
           alt="Help a stray today"
           fill
+           loading="eager"
+          sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover"
         />
 
@@ -149,38 +170,87 @@ export default function DashboardPage() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-gray-800 text-lg">My Reports</h2>
-          <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
-            {reports.length}
-          </span>
+          <Link
+            href="/user/my-posts"
+            className="text-red-600 hover:text-red-700 font-semibold text-sm flex items-center gap-1 transition"
+          >
+            View All
+            <HiArrowRight size={16} />
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {reports.map((animal) => (
-            <div
-              key={animal.id}
-              className="bg-white rounded-2xl overflow-hidden shadow"
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center shadow">
+            <p className="text-gray-500 font-medium">No reports yet</p>
+            <p className="text-gray-400 text-sm mt-1">
+              Start by creating your first animal report
+            </p>
+            <Link
+              href="/user/post"
+              className="inline-block mt-4 bg-red-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-red-700 transition"
             >
-              {/* IMAGE ON TOP */}
-              <div className="w-full h-40 relative">
-                <Image
-                  src={animal.image}
-                  alt={animal.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
+              Create Report
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {reports.map((report) => (
+              <Link
+                key={report._id}
+                href={`/user/my-posts/${report._id}`}
+                className="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition cursor-pointer group"
+              >
+                {/* IMAGE ON TOP */}
+                <div className="w-full h-40 relative overflow-hidden bg-gray-200">
+                  {report.imageUrl ? (
+                    <Image
+                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${report.imageUrl}`}
+                      alt={report.species}
+                      fill
 
-              {/* TEXT BELOW */}
-              <div className="p-4">
-                <h3 className="font-bold text-gray-800">{animal.name}</h3>
-                <p className="text-gray-500 text-sm">{animal.location}</p>
-                <p className="text-gray-600 text-sm mt-1">
-                  {animal.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                      <span className="text-gray-500">No image</span>
+                    </div>
+                  )}
+
+                  {/* STATUS BADGE */}
+                  <div className="absolute top-2 right-2">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                        report.status
+                      )}`}
+                    >
+                      {getStatusText(report.status)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* TEXT BELOW */}
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 capitalize">
+                    {report.species}
+                  </h3>
+                  <p className="text-gray-500 text-sm flex items-center gap-1">
+                    📍 {report.location}
+                  </p>
+                  {report.description && (
+                    <p className="text-gray-600 text-sm mt-2 line-clamp-2">
+                      {report.description}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

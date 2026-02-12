@@ -1,5 +1,3 @@
-// app/admin/users/page.tsx
-
 "use client";
 
 import Link from "next/link";
@@ -9,7 +7,7 @@ import { toast } from "react-toastify";
 import { deleteUserById, fetchUsers } from "@/lib/api/admin/user";
 
 
-const PAGE_SIZE = 10; // Users per page
+const PAGE_SIZE = 8;
 
 interface User {
   _id: string;
