@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useState, Fragment, useEffect } from "react";
 import { FaPaw } from "react-icons/fa";
 import { HiArrowRight } from "react-icons/hi";
-import { Dialog, Transition } from "@headlessui/react";
 import { toast } from "react-toastify";
 import { getMyReports } from "@/lib/api/animal-report/animal-report";
+import { Dialog, Transition } from "@headlessui/react";
 
 interface AnimalReport {
   _id: string;
@@ -28,7 +28,7 @@ export default function DashboardPage() {
     const fetchReports = async () => {
       try {
         setLoading(true);
-        const response = await getMyReports(1, 4); //euta page ma kati dekhaune 
+        const response = await getMyReports(1, 4);
         
         if (response.success) {
           setReports(response.data || []);
@@ -68,7 +68,7 @@ export default function DashboardPage() {
           src="/images/heropup.jpg"
           alt="Help a stray today"
           fill
-           loading="eager"
+          loading="eager"
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover"
         />
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-gray-800 text-lg">My Reports</h2>
           <Link
-            href="/user/my-posts"
+            href="/user/my-reports"
             className="text-red-600 hover:text-red-700 font-semibold text-sm flex items-center gap-1 transition"
           >
             View All
@@ -199,10 +199,9 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {reports.map((report) => (
-              <Link
+              <div
                 key={report._id}
-                href={`/user/my-posts/${report._id}`}
-                className="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition cursor-pointer group"
+                className="bg-white rounded-2xl overflow-hidden shadow hover:shadow-xl transition"
               >
                 {/* IMAGE ON TOP */}
                 <div className="w-full h-40 relative overflow-hidden bg-gray-200">
@@ -211,9 +210,8 @@ export default function DashboardPage() {
                       src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${report.imageUrl}`}
                       alt={report.species}
                       fill
-
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-300">
@@ -239,7 +237,7 @@ export default function DashboardPage() {
                     {report.species}
                   </h3>
                   <p className="text-gray-500 text-sm flex items-center gap-1">
-                    📍 {report.location}
+                    {report.location}
                   </p>
                   {report.description && (
                     <p className="text-gray-600 text-sm mt-2 line-clamp-2">
@@ -247,7 +245,7 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
