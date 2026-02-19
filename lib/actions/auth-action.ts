@@ -12,7 +12,7 @@ export const handleRegister = async (data: RegisterData) => {
             return {
                 success: true,
                 message: 'Registration successful',
-                data: response.data
+                data: response.data 
             }
         }
         return {
