@@ -9,13 +9,9 @@ import {
   HiCheckCircle,
   HiXCircle,
   HiClock,
-  HiTrendingUp,
-  HiCalendar,
 } from "react-icons/hi";
 import StatCard from "./_components/StatCard";
-import ReportsChart from "./_components/ReportsChart";
 import RecentReports from "./_components/RecentReports";
-import UsersChart from "./_components/UsersChart";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1`;
 
@@ -25,9 +21,6 @@ interface DashboardStats {
   approvedReports: number;
   rejectedReports: number;
   totalUsers: number;
-  newUsersThisMonth: number;
-  approvalRate: number;
-  reportsThisMonth: number;
 }
 
 interface RecentReport {
@@ -74,13 +67,10 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      // Fetch all reports
       const reportsResponse = await axios.get(`${API_URL}/reports/all`, {
-        params: { limit: 100 },
         headers: createAuthHeader(),
       });
 
-      // Fetch all users
       const usersResponse = await axios.get(`${API_URL}/admin/users`, {
         headers: createAuthHeader(),
       });
@@ -89,7 +79,6 @@ export default function DashboardPage() {
         const reports = reportsResponse.data.data || [];
         const users = usersResponse.data.data || [];
 
-        // Calculate stats
         const totalReports = reports.length;
         const pendingReports = reports.filter(
           (r: any) => r.status === "pending"
@@ -103,54 +92,27 @@ export default function DashboardPage() {
 
         const totalUsers = users.length;
 
-        // Calculate new users this month
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
-
-        const newUsersThisMonth = users.filter((user: any) => {
-          const userDate = new Date(user.createdAt);
-          return (
-            userDate.getMonth() === currentMonth &&
-            userDate.getFullYear() === currentYear
-          );
-        }).length;
-
-        // Calculate reports this month
-        const reportsThisMonth = reports.filter((report: any) => {
-          const reportDate = new Date(report.createdAt);
-          return (
-            reportDate.getMonth() === currentMonth &&
-            reportDate.getFullYear() === currentYear
-          );
-        }).length;
-
-        // Calculate approval rate
-        const completedReports = approvedReports + rejectedReports;
-        const approvalRate =
-          completedReports > 0
-            ? Math.round((approvedReports / completedReports) * 100)
-            : 0;
-
         setStats({
           totalReports,
           pendingReports,
           approvedReports,
           rejectedReports,
           totalUsers,
-          newUsersThisMonth,
-          approvalRate,
-          reportsThisMonth,
         });
 
-        // Get 5 most recent reports
-        const recent = reports.slice(0, 5);
-        setRecentReports(recent);
+        // Sort by newest first
+        const sortedReports = [...reports].sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
+
+        setRecentReports(sortedReports.slice(0, 5));
       } else {
         toast.error("Failed to load dashboard data");
       }
-    } catch (error: any) {
-      console.error("Error fetching dashboard:", error);
+    } catch (error) {
+      console.error("Dashboard error:", error);
       toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -166,79 +128,55 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">
-          Welcome to AdoptNest Admin Panel. Monitor your system at a glance.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Overview of reports and users in AdoptNest.
+          </p>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Total Reports"
           value={stats?.totalReports || 0}
           icon={<HiClipboardList size={24} />}
           color="blue"
-          trend={stats?.reportsThisMonth || 0}
-          trendLabel="this month"
         />
+
         <StatCard
           title="Pending"
           value={stats?.pendingReports || 0}
           icon={<HiClock size={24} />}
           color="orange"
-          subtext="Awaiting review"
         />
+
         <StatCard
           title="Approved"
           value={stats?.approvedReports || 0}
           icon={<HiCheckCircle size={24} />}
           color="green"
-          subtext={`${stats?.approvalRate || 0}% approval rate`}
         />
+
         <StatCard
           title="Rejected"
           value={stats?.rejectedReports || 0}
           icon={<HiXCircle size={24} />}
           color="red"
-          subtext="Not matching criteria"
         />
-      </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatCard
           title="Total Users"
           value={stats?.totalUsers || 0}
           icon={<HiUsers size={24} />}
           color="purple"
-          trend={stats?.newUsersThisMonth || 0}
-          trendLabel="new this month"
         />
-        <StatCard
-          title="Approval Rate"
-          value={`${stats?.approvalRate || 0}%`}
-          icon={<HiTrendingUp size={24} />}
-          color="indigo"
-          subtext="Overall performance"
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ReportsChart
-  reports={{
-    totalReports: stats?.totalReports || 0,
-    pendingReports: stats?.pendingReports || 0,
-    approvedReports: stats?.approvedReports || 0,
-    rejectedReports: stats?.rejectedReports || 0,
-  }}
-/>
-
-        <UsersChart />
       </div>
 
       {/* Recent Reports */}

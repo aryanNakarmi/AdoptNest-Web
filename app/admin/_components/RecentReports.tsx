@@ -130,13 +130,6 @@ export default function RecentReports({ reports }: RecentReportsProps) {
                 </span>
               </div>
 
-              {/* Action Link */}
-              <Link
-                href={`/admin/reports`}
-                className="text-gray-400 hover:text-gray-600 transition"
-              >
-                <HiArrowRight size={18} />
-              </Link>
             </div>
           ))
         )}

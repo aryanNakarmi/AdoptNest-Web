@@ -63,7 +63,7 @@ export default function MyReportsPage() {
 
       if (response.success) {
         toast.success("Report deleted successfully");
-        if (selectedReport?._id === reportId) setSelectedReport(null);
+        setSelectedReport(null);
         fetchReports(currentPage);
       } else {
         toast.error(response.message || "Failed to delete report");
@@ -181,18 +181,6 @@ export default function MyReportsPage() {
                       {getStatusText(report.status)}
                     </span>
                   </div>
-
-                  {/* Delete Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteReport(report._id, report.species);
-                    }}
-                    disabled={deleting === report._id}
-                    className="absolute top-3 left-3 p-2 bg-white/90 hover:bg-red-600 text-gray-600 hover:text-white rounded-lg transition-all duration-200 disabled:opacity-50 shadow-sm"
-                  >
-                    <HiTrash size={16} />
-                  </button>
                 </div>
 
                 {/* Content */}
@@ -279,6 +267,18 @@ export default function MyReportsPage() {
                 className="absolute top-4 right-4 z-20 p-2 bg-white/90 hover:bg-red-600 text-gray-700 hover:text-white rounded-full transition-all duration-200 shadow-lg"
               >
                 <HiX size={24} />
+              </button>
+
+              {/* Delete Button - Top Left */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteReport(selectedReport._id, selectedReport.species);
+                }}
+                disabled={deleting === selectedReport._id}
+                className="absolute top-4 left-4 z-20 p-2 bg-white/90 hover:bg-red-600 text-gray-600 hover:text-white rounded-full transition-all duration-200 disabled:opacity-50 shadow-lg"
+              >
+                <HiTrash size={24} />
               </button>
 
               {/* Status Badge - Bottom Left */}
