@@ -149,7 +149,7 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
       // Append new photos only if there are any
       if (selectedPhotos.length > 0) {
         selectedPhotos.forEach((photo) => {
-          formDataToSend.append('photos', photo);
+          formDataToSend.append('animalPost', photo);
         });
       }
 
