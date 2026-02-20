@@ -1,5 +1,3 @@
-// app/admin/users/[id]/page.tsx
-
 import { getUserById } from "@/lib/api/admin/user";
 import Image from "next/image";
 import Link from "next/link";

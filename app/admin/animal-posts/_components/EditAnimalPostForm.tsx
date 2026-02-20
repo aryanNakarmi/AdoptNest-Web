@@ -1,14 +1,33 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import { HiX, HiPlus } from 'react-icons/hi';
-import { handleCreateAnimalPost } from '@/lib/actions/animal-action';
+import { handleUpdateAnimalPost } from '@/lib/actions/animal-action';
 
 const SPECIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Guinea Pig', 'Other'];
 const GENDERS = ['Male', 'Female'];
+
+interface AnimalPost {
+  _id: string;
+  species: string;
+  gender: string;
+  breed: string;
+  age: number;
+  location: string;
+  description: string;
+  photos: string[];
+  status: 'Available' | 'Adopted';
+  adoptedBy?: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface FormData {
   species: string;
@@ -19,20 +38,26 @@ interface FormData {
   description: string;
 }
 
-export default function CreateAnimalPostForm() {
+interface EditAnimalPostFormProps {
+  post: AnimalPost;
+  postId: string;
+}
+
+export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>(post.photos || []);
 
   const [formData, setFormData] = useState<FormData>({
-    species: '',
-    gender: '',
-    breed: '',
-    age: '',
-    location: '',
-    description: '',
+    species: post.species,
+    gender: post.gender,
+    breed: post.breed,
+    age: post.age.toString(),
+    location: post.location,
+    description: post.description,
   });
 
   const handleInputChange = (
@@ -47,9 +72,10 @@ export default function CreateAnimalPostForm() {
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    const totalPhotos = existingPhotos.length + selectedPhotos.length + files.length;
 
-    if (selectedPhotos.length + files.length > 5) {
-      toast.error('Maximum 5 photos allowed');
+    if (totalPhotos > 5) {
+      toast.error(`Maximum 5 photos allowed. You have ${existingPhotos.length + selectedPhotos.length} existing photos.`);
       return;
     }
 
@@ -80,9 +106,13 @@ export default function CreateAnimalPostForm() {
     }
   };
 
-  const removePhoto = (index: number) => {
+  const removeNewPhoto = (index: number) => {
     setSelectedPhotos((prev) => prev.filter((_, i) => i !== index));
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingPhoto = (index: number) => {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,8 +130,8 @@ export default function CreateAnimalPostForm() {
       return;
     }
 
-    if (selectedPhotos.length === 0) {
-      toast.error('Please upload at least one photo');
+    if (existingPhotos.length === 0 && selectedPhotos.length === 0) {
+      toast.error('Please keep at least one photo or upload new ones');
       return;
     }
 
@@ -116,20 +146,23 @@ export default function CreateAnimalPostForm() {
       formDataToSend.append('location', formData.location);
       formDataToSend.append('description', formData.description);
 
-      selectedPhotos.forEach((photo) => {
-        formDataToSend.append('animalPost', photo);
-      });
+      // Append new photos only if there are any
+      if (selectedPhotos.length > 0) {
+        selectedPhotos.forEach((photo) => {
+          formDataToSend.append('photos', photo);
+        });
+      }
 
-      const response = await handleCreateAnimalPost(formDataToSend);
+      const response = await handleUpdateAnimalPost(postId, formDataToSend);
 
       if (response.success) {
-        toast.success('Animal post created successfully!');
-        router.push('/admin/animal-posts');
+        toast.success('Animal post updated successfully!');
+        router.push(`/admin/animal-posts/${postId}`);
       } else {
-        toast.error(response.message || 'Failed to create post');
+        toast.error(response.message || 'Failed to update post');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create post');
+      toast.error(error.message || 'Failed to update post');
     } finally {
       setLoading(false);
     }
@@ -138,47 +171,27 @@ export default function CreateAnimalPostForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 space-y-6">
-        {/* Photo Upload Section */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-          <div className="flex flex-col items-center gap-2">
-            <HiPlus size={32} className="text-gray-400" />
-            <p className="text-sm font-medium text-gray-700">Upload Animal Photos</p>
-            <p className="text-xs text-gray-500">
-              Maximum 5 photos (JPEG, PNG, WebP, max 5MB each)
-            </p>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
-            >
-              Choose Photos
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handlePhotoSelect}
-              className="hidden"
-            />
-          </div>
-
-          {/* Photo Previews */}
-          {photoPreviews.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-              {photoPreviews.map((preview, index) => (
+        {/* Existing Photos */}
+        {existingPhotos.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Current Photos
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {existingPhotos.map((photo, index) => (
                 <div key={index} className="relative group">
                   <div className="relative w-full h-32">
                     <Image
-                      src={preview}
-                      alt={`Preview ${index + 1}`}
+                      src={`http://localhost:5050${photo}`}
+                      alt={`Existing ${index + 1}`}
                       fill
                       className="rounded-lg object-cover"
+                      unoptimized
                     />
                   </div>
                   <button
                     type="button"
-                    onClick={() => removePhoto(index)}
+                    onClick={() => removeExistingPhoto(index)}
                     className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
                   >
                     <HiX size={16} />
@@ -186,7 +199,63 @@ export default function CreateAnimalPostForm() {
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* New Photo Upload Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Add More Photos (Optional)
+          </label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            <div className="flex flex-col items-center gap-2">
+              <HiPlus size={32} className="text-gray-400" />
+              <p className="text-sm font-medium text-gray-700">Upload Additional Photos</p>
+              <p className="text-xs text-gray-500">
+                Maximum 5 total photos. Current: {existingPhotos.length + selectedPhotos.length}
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+              >
+                Choose Photos
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
+            </div>
+
+            {/* New Photo Previews */}
+            {photoPreviews.length > 0 && (
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+                {photoPreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <div className="relative w-full h-32">
+                      <Image
+                        src={preview}
+                        alt={`New ${index + 1}`}
+                        fill
+                        className="rounded-lg object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeNewPhoto(index)}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <HiX size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Form Grid */}
@@ -299,7 +368,7 @@ export default function CreateAnimalPostForm() {
           disabled={loading}
           className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-60"
         >
-          {loading ? 'Creating Post...' : 'Create Post'}
+          {loading ? 'Updating Post...' : 'Update Post'}
         </button>
       </div>
     </form>

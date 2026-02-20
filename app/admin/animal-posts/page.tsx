@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { HiPlus, HiEye, HiPencil, HiTrash, HiChevronDown } from 'react-icons/hi';
-import axios from 'axios';
+import { HiPlus, HiEye } from 'react-icons/hi';
+import { 
+  handleGetAllAnimalPosts
+} from '@/lib/actions/animal-action';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:5050';
 
 interface AnimalPost {
   _id: string;
@@ -28,23 +30,10 @@ interface AnimalPost {
   updatedAt: string;
 }
 
-const getAuthToken = () => {
-  if (typeof document === 'undefined') return null;
-  const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith('auth_token=')) {
-      return decodeURIComponent(cookie.substring('auth_token='.length));
-    }
-  }
-  return null;
-};
-
 export default function AdminAnimalsPage() {
   const [posts, setPosts] = useState<AnimalPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'Available' | 'Adopted'>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -53,69 +42,17 @@ export default function AdminAnimalsPage() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
-      const response = await axios.get(`${API_BASE_URL}/animal-posts`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await handleGetAllAnimalPosts();
 
-      if (response.data.success) {
-        setPosts(response.data.data);
+      if (response.success) {
+        setPosts(response.data);
       } else {
-        toast.error(response.data.message || 'Failed to load posts');
+        toast.error(response.message || 'Failed to load posts');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load posts');
+      toast.error(error.message || 'Failed to load posts');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const token = getAuthToken();
-      const response = await axios.delete(`${API_BASE_URL}/animal-posts/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.success) {
-        setPosts((prev) => prev.filter((p) => p._id !== id));
-        setDeleteConfirm(null);
-        toast.success('Post deleted successfully');
-      } else {
-        toast.error(response.data.message || 'Failed to delete post');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete post');
-    }
-  };
-
-  const handleStatusChange = async (id: string, newStatus: 'Available' | 'Adopted') => {
-    try {
-      const token = getAuthToken();
-      const response = await axios.put(
-        `${API_BASE_URL}/animal-posts/${id}/status`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setPosts((prev) =>
-          prev.map((p) => (p._id === id ? { ...p, status: newStatus } : p))
-        );
-        toast.success(`Status changed to ${newStatus}`);
-      } else {
-        toast.error(response.data.message || 'Failed to update status');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -211,16 +148,17 @@ export default function AdminAnimalsPage() {
             >
               {/* Image */}
               <div className="relative h-48 bg-gray-200">
-                {post.photos && post.photos.length > 0 ? (
+                {post.photos && post.photos.length > 0 && post.photos[0] ? (
                   <Image
-                    src={`${API_BASE_URL.replace('/api/v1', '')}${post.photos[0]}`}
+                    src={`${BASE_URL}${post.photos[0]}`}
                     alt={post.breed}
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                    <HiEye className="text-gray-500" size={48} />
+                    <span className="text-gray-600 font-medium">No Image</span>
                   </div>
                 )}
 
@@ -231,24 +169,11 @@ export default function AdminAnimalsPage() {
                   </div>
                 )}
 
-                {/* Status Badge with Dropdown */}
-                <div className="absolute top-3 right-3 flex items-center gap-1">
-                  <select
-                    value={post.status}
-                    onChange={(e) =>
-                      handleStatusChange(post._id, e.target.value as 'Available' | 'Adopted')
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-bold border-2 cursor-pointer hover:opacity-90 transition appearance-none pr-6 ${getStatusColor(
-                      post.status
-                    )}`}
-                  >
-                    <option value="Available">Available</option>
-                    <option value="Adopted">Adopted</option>
-                  </select>
-                  <HiChevronDown
-                    size={12}
-                    className="absolute right-1 pointer-events-none text-gray-700"
-                  />
+                {/* Status Badge */}
+                <div className="absolute top-3 right-3">
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${getStatusColor(post.status)}`}>
+                    {post.status}
+                  </div>
                 </div>
               </div>
 
@@ -280,28 +205,14 @@ export default function AdminAnimalsPage() {
                 </p>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-gray-200">
                   <Link
                     href={`/admin/animal-posts/${post._id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
                   >
                     <HiEye size={16} />
-                    View
+                    View Details
                   </Link>
-                  <Link
-                    href={`/admin/animal-posts/${post._id}/edit`}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition text-sm font-medium"
-                  >
-                    <HiPencil size={16} />
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => setDeleteConfirm(post._id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition text-sm font-medium"
-                  >
-                    <HiTrash size={16} />
-                    Delete
-                  </button>
                 </div>
 
                 {/* Meta Info */}
@@ -309,27 +220,6 @@ export default function AdminAnimalsPage() {
                   Created: {new Date(post.createdAt).toLocaleDateString()}
                 </p>
               </div>
-
-              {/* Delete Confirmation */}
-              {deleteConfirm === post._id && (
-                <div className="bg-red-50 border-t-2 border-red-500 p-4 space-y-3">
-                  <p className="text-sm text-red-900 font-bold">Delete this post?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleDelete(post._id)}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 font-bold text-sm transition"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 font-bold text-sm transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
