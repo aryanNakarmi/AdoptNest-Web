@@ -20,5 +20,14 @@ export const API = {
         UPDATE_STATUS: (id: string) => `/api/v1/reports/${id}/status`,
         BY_SPECIES: (species: string) => `/api/v1/reports/species/${species}`,
         UPLOAD_IMAGE: '/api/v1/reports/upload-photo',
+    },
+     ANIMAL_POSTS: { 
+        GET_ALL: '/api/v1/animal-posts',
+        GET_BY_ID: (id: string) => `/api/v1/animal-posts/${id}`,
+        CREATE: '/api/v1/animal-posts',
+        UPDATE: (id: string) => `/api/v1/animal-posts/${id}`,
+        DELETE: (id: string) => `/api/v1/animal-posts/${id}`,
+        UPDATE_STATUS: (id: string) => `/api/v1/animal-posts/${id}/status`,
+        BY_SPECIES: (species: string) => `/api/v1/animal-posts/species/${species}`,
     }
 }
