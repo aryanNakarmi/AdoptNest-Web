@@ -1,5 +1,3 @@
-// app/(auth)/_components/LoginForm.tsx
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -11,6 +9,7 @@ import Image from "next/image";
 import { LoginData, loginSchema } from "../schema";
 import { handleLogin } from "@/lib/actions/auth-action";
 import { useAuth } from "@/context/AuthContext";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function LoginForm(){
 
@@ -23,6 +22,8 @@ export default function LoginForm(){
         resolver: zodResolver(loginSchema),
         mode: "onSubmit"
     });
+    
+    const [showPassword, setShowPassword] = useState(false);
 
     const [pending, setTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
@@ -92,24 +93,40 @@ export default function LoginForm(){
                             Forgot?
                         </Link>
                     </div>
-                    <input type="password"
-                    id="password"
-                    autoComplete="current-password"
-                    {...register("password")}
-                    className="w-full px-4 h-12 rounded-full 
-                    border-2 border-gray-300
-                    text-gray-900
-                    text-sm
-                    placeholder:text-gray-500
-                    focus:border-orange-400
-                    focus:outline-none
-                    transition-colors"
-                    placeholder="Enter your password" 
-                    />
+                    <div className="relative">
+                        <input 
+                            type={showPassword ? "text" : "password"}
+                            id="password"
+                            autoComplete="current-password"
+                            {...register("password")}
+                            className="w-full px-4 pr-12 h-12 rounded-full 
+                            border-2 border-gray-300
+                            text-gray-900
+                            text-sm
+                            placeholder:text-gray-500
+                            focus:border-orange-400
+                            focus:outline-none
+                            transition-colors"
+                            placeholder="Enter your password" 
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            {showPassword ? (
+                                <HiEyeOff size={20} />
+                            ) : (
+                                <HiEye size={20} />
+                            )}
+                        </button>
+                    </div>
+                  
                     <div className="h-3">
                     {errors.password?.message && (
                         <p className="text-xs text-red-600">{errors.password.message}</p>
                     )}
+                    
                     </div>
                 </div>
 

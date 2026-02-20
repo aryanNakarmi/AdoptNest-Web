@@ -15,7 +15,7 @@ interface StatCardProps {
 
 export default function StatCard({
   title,
-  value,
+  value,  
   icon,
   color,
   trend,
