@@ -2,15 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { HiArrowLeft } from 'react-icons/hi';
-import { 
-  handleGetAnimalPostById,
-  handleUpdateAnimalPost
-} from '@/lib/actions/animal-action';
-import EditAnimalPostForm from '../../_components/EditAnimalPostForm';
-
+import { handleGetAnimalPostById } from '@/lib/actions/animal-action';
+import EditAnimalPostForm from '@/app/admin/animal-posts/_components/EditAnimalPostForm'; 
 interface AnimalPost {
   _id: string;
   species: string;
@@ -30,7 +24,7 @@ interface AnimalPost {
   updatedAt: string;
 }
 
-export default function EditAnimalPostPage() {
+export default function EditAnimalPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -46,7 +40,6 @@ export default function EditAnimalPostPage() {
     try {
       setLoading(true);
       const response = await handleGetAnimalPostById(id);
-
       if (response.success) {
         setPost(response.data);
       } else {
@@ -73,29 +66,20 @@ export default function EditAnimalPostPage() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 text-lg">Animal post not found</p>
-        <Link href="/admin/animal-posts" className="text-red-600 hover:underline mt-4 inline-block">
-          Back to posts
-        </Link>
+        <button
+          onClick={() => router.push('/admin/animal-posts')}
+          className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+        >
+          Back to Posts
+        </button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/admin/animal-posts/${id}`}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-        >
-          <HiArrowLeft size={20} />
-          Back
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Edit {post.breed}</h1>
-      </div>
-
-      {/* Form */}
-      <EditAnimalPostForm post={post} postId={id} />
+      <h1 className="text-3xl font-bold text-gray-900">Edit Animal Post</h1>
+      <EditAnimalPostForm post={post} postId={post._id} />
     </div>
   );
 }
