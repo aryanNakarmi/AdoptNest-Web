@@ -29,7 +29,6 @@ interface AnimalPost {
   updatedAt: string;
 }
 
-const SPECIES_OPTIONS = ['All', 'Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Guinea Pig', 'Other'];
 const GENDER_OPTIONS = ['All', 'Male', 'Female'];
 
 export default function AdoptPage() {
@@ -102,6 +101,7 @@ export default function AdoptPage() {
 
   updated = updated.filter((post) =>
     [
+      post._id,
       post.breed,
       post.location,
       post.species,
@@ -131,6 +131,14 @@ export default function AdoptPage() {
     genderFilter !== 'All',
     searchQuery.trim() !== '',
   ].filter(Boolean).length;
+
+  // Generate unique species dynamically
+const speciesOptions = [
+  'All',
+  ...Array.from(
+    new Set(allPosts.map((post) => post.species?.trim()).filter(Boolean))
+  ).sort(),
+];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
@@ -216,11 +224,11 @@ export default function AdoptPage() {
                 onChange={(e) => setSpeciesFilter(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
               >
-                {SPECIES_OPTIONS.map((species) => (
-                  <option key={species} value={species}>
-                    {species}
-                  </option>
-                ))}
+                    {speciesOptions.map((species) => (
+        <option key={species} value={species}>
+          {species}
+        </option>
+      ))}
               </select>
             </div>
 

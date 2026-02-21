@@ -319,10 +319,14 @@ export default function AnimalDetailPage() {
           </div>
 
           {/* Metadata */}
-          <div className="text-gray-500 text-sm space-y-1 pt-4 border-t border-gray-200">
-            <p>Created: {new Date(post.createdAt).toLocaleDateString()}</p>
-            <p>Updated: {new Date(post.updatedAt).toLocaleDateString()}</p>
-          </div>
+<div className="text-gray-500 text-sm space-y-1 pt-4 border-t border-gray-200">
+  <div>
+    <p className="text-xs uppercase tracking-wide text-gray-400">Animal Reference ID</p>
+    <p className="text-sm font-semibold text-gray-800 break-all mt-1">{post._id}</p>
+  </div>
+  <p>Created: {new Date(post.createdAt).toLocaleDateString()}</p>
+  <p>Updated: {new Date(post.updatedAt).toLocaleDateString()}</p>
+</div>
         </div>
       </div>
 

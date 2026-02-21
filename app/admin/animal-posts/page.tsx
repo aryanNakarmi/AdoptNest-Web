@@ -59,7 +59,9 @@ export default function AdminAnimalsPage() {
   // Then filter by search query (breed or species)
   const searchedPosts = filteredPosts.filter((post) => {
     const query = searchQuery.toLowerCase();
-    return post.breed.toLowerCase().includes(query) || post.species.toLowerCase().includes(query);
+    return post._id.toLowerCase().includes(query) ||
+      post.breed.toLowerCase().includes(query) 
+    || post.species.toLowerCase().includes(query);
   });
 
   const getStatusColor = (status: string) =>

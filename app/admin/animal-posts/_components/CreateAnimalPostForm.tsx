@@ -184,7 +184,9 @@ export default function CreateAnimalPostForm() {
                       alt={`Preview ${index + 1}`}
                       fill
                       className="rounded-lg object-cover"
+                      unoptimized
                     />
+                    
                   </div>
                   <button
                     type="button"
