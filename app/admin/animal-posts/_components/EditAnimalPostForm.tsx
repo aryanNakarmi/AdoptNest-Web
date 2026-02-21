@@ -1,7 +1,9 @@
+// app/admin/animal-posts/_components/EditAnimalPostForm.tsx
+
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import { HiX, HiPlus } from 'react-icons/hi';
@@ -75,7 +77,9 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
     const totalPhotos = existingPhotos.length + selectedPhotos.length + files.length;
 
     if (totalPhotos > 5) {
-      toast.error(`Maximum 5 photos allowed. You have ${existingPhotos.length + selectedPhotos.length} existing photos.`);
+      toast.error(
+        `Maximum 5 photos allowed. You have ${existingPhotos.length + selectedPhotos.length} existing photos.`
+      );
       return;
     }
 
@@ -146,7 +150,12 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
       formDataToSend.append('location', formData.location);
       formDataToSend.append('description', formData.description);
 
-      // Append new photos only if there are any
+      // ✅ Send existing photos that user kept (not removed)
+      existingPhotos.forEach((photo) => {
+        formDataToSend.append('existingPhotos', photo);
+      });
+
+      // ✅ Send new photos only if there are any
       if (selectedPhotos.length > 0) {
         selectedPhotos.forEach((photo) => {
           formDataToSend.append('animalPost', photo);
@@ -175,8 +184,11 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
         {existingPhotos.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Current Photos
+              Current Photos ({existingPhotos.length})
             </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Click the X to remove photos you don't want
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {existingPhotos.map((photo, index) => (
                 <div key={index} className="relative group">
@@ -193,6 +205,7 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
                     type="button"
                     onClick={() => removeExistingPhoto(index)}
                     className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                    title="Remove this photo"
                   >
                     <HiX size={16} />
                   </button>
@@ -248,6 +261,7 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
                       type="button"
                       onClick={() => removeNewPhoto(index)}
                       className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                      title="Remove this new photo"
                     >
                       <HiX size={16} />
                     </button>
@@ -260,11 +274,8 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
 
         {/* Form Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Species Dropdown */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Species *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Species *</label>
             <select
               name="species"
               value={formData.species}
@@ -280,11 +291,8 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
             </select>
           </div>
 
-          {/* Gender Dropdown */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Gender *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
             <select
               name="gender"
               value={formData.gender}
@@ -300,11 +308,8 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
             </select>
           </div>
 
-          {/* Breed */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Breed *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Breed *</label>
             <input
               type="text"
               name="breed"
@@ -315,7 +320,6 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
             />
           </div>
 
-          {/* Age */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Age (in months) *
@@ -331,11 +335,8 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
             />
           </div>
 
-          {/* Location */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Location *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
             <input
               type="text"
               name="location"
@@ -349,9 +350,7 @@ export default function EditAnimalPostForm({ post, postId }: EditAnimalPostFormP
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description *
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
           <textarea
             name="description"
             value={formData.description}
