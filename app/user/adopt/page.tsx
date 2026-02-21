@@ -154,7 +154,7 @@ export default function AdoptPage() {
                 : 'text-gray-700 hover:text-gray-900'
             }`}
           >
-            <span>🐾</span>
+            
             All Animals ({allPosts.length})
           </button>
           <button
@@ -168,7 +168,6 @@ export default function AdoptPage() {
                 : 'text-gray-700 hover:text-gray-900'
             }`}
           >
-            <HiHeart size={18} />
             My Adoptions ({myAdoptionsPosts.length})
           </button>
         </div>
@@ -352,7 +351,7 @@ export default function AdoptPage() {
 
                     <div className="space-y-1 text-sm text-gray-700">
                       <p className="flex items-center gap-1">
-                        <span>📍</span> {post.location}
+                        <span></span> {post.location}
                       </p>
                       <p className="line-clamp-2 text-gray-600">{post.description}</p>
                     </div>
