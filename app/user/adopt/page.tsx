@@ -56,7 +56,6 @@ export default function AdoptPage() {
         const allResponse = await axios.get(API.ANIMAL_POSTS.GET_ALL);
         setAllPosts(allResponse.data.data || []);
 
-        // ✅ Fetch user's adoptions from new endpoint
         try {
           const myResponse = await axios.get(`${BASE_URL}/api/v1/animal-posts/my-adoptions`);
           setMyAdoptionsPosts(myResponse.data.data || []);
@@ -98,13 +97,23 @@ export default function AdoptPage() {
     }
 
     // Apply search filter
-    if (searchQuery.trim() !== '') {
-      updated = updated.filter(
-        (post) =>
-          post.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          post.location.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+ if (searchQuery.trim() !== '') {
+  const query = searchQuery.toLowerCase();
+
+  updated = updated.filter((post) =>
+    [
+      post.breed,
+      post.location,
+      post.species,
+      post.gender,
+      post.description,
+    ]
+      .filter(Boolean)
+      .some((field) =>
+        field.toLowerCase().includes(query)
+      )
+  );
+}
 
     setFilteredPosts(updated);
   }, [allPosts, myAdoptionsPosts, activeTab, statusFilter, speciesFilter, genderFilter, searchQuery]);
