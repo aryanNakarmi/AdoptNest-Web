@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { HiArrowLeft, HiClipboardCopy } from "react-icons/hi";
 import axios from "@/lib/api/axios";
 
 const BASE_URL =
@@ -50,17 +51,11 @@ export default function UserAnimalDetailPage() {
   };
 
   const nextPhoto = () => {
-    if (post?.photos) {
-      setCurrentPhotoIndex((prev) => (prev + 1) % post.photos.length);
-    }
+    if (post?.photos) setCurrentPhotoIndex((prev) => (prev + 1) % post.photos.length);
   };
 
   const prevPhoto = () => {
-    if (post?.photos) {
-      setCurrentPhotoIndex(
-        (prev) => (prev - 1 + post.photos.length) % post.photos.length
-      );
-    }
+    if (post?.photos) setCurrentPhotoIndex((prev) => (prev - 1 + post.photos.length) % post.photos.length);
   };
 
   const copyAnimalId = () => {
@@ -71,34 +66,50 @@ export default function UserAnimalDetailPage() {
 
   if (loading)
     return (
-      <div className="flex justify-center py-20 text-gray-500 text-lg">
-        Loading animal details...
+      <div className="flex justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
 
   if (!post)
     return (
       <div className="text-center py-20 text-gray-500 text-lg">
-        Animal not found
+        Animal not found.{" "}
+        <Link href="/user/adopt" className="text-red-600 hover:underline">
+          Back to Adopt
+        </Link>
       </div>
     );
 
   return (
-    <div className="space-y-10">
-      {/* Back */}
-      <Link
-        href="/user/adopt"
-        className="text-sm text-gray-500 hover:text-gray-700 transition"
-      >
-        ← Back to Adopt
-      </Link>
+    <div className="flex flex-col h-full gap-4 p-4 lg:p-6 overflow-hidden">
+      {/* Header — fixed at top */}
+      <div className="flex items-center gap-4 flex-shrink-0">
+        <Link
+          href="/user/adopt"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+        >
+          <HiArrowLeft size={20} /> Back
+        </Link>
+        <h1 className="text-2xl font-bold text-gray-900">{post.breed}</h1>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${
+            post.status === "Available"
+              ? "bg-green-100 text-green-800 border-green-300"
+              : "bg-blue-100 text-blue-800 border-blue-300"
+          }`}
+        >
+          {post.status}
+        </span>
+      </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* LEFT SIDE */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Image */}
-          <div className="relative w-full h-[420px] rounded-3xl overflow-hidden shadow-md bg-gray-100">
+      {/* Body — fills remaining height, no overflow */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+
+        {/* LEFT — Photo + details, scrollable if needed */}
+        <div className="lg:col-span-2 flex flex-col gap-4 min-h-0 overflow-y-auto pr-1">
+          {/* Main Photo — smaller fixed height */}
+          <div className="relative w-full h-64 flex-shrink-0 bg-gray-100 rounded-2xl overflow-hidden shadow-lg">
             {post.photos.length > 0 ? (
               <Image
                 src={`${BASE_URL}${post.photos[currentPhotoIndex]}`}
@@ -108,7 +119,7 @@ export default function UserAnimalDetailPage() {
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <div className="w-full h-full flex items-center justify-center text-gray-500">
                 No Image Available
               </div>
             )}
@@ -117,95 +128,122 @@ export default function UserAnimalDetailPage() {
               <>
                 <button
                   onClick={prevPhoto}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 backdrop-blur px-3 py-2 rounded-full shadow hover:bg-white transition"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition"
                 >
                   ❮
                 </button>
                 <button
                   onClick={nextPhoto}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 backdrop-blur px-3 py-2 rounded-full shadow hover:bg-white transition"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition"
                 >
                   ❯
                 </button>
-
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-4 py-1 rounded-full">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/40 text-white text-sm px-3 py-1 rounded-full">
                   {currentPhotoIndex + 1} / {post.photos.length}
                 </div>
               </>
             )}
           </div>
 
-          {/* Info Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {post.breed}
-              </h1>
-              <p className="text-gray-500 mt-1">
-                {post.species} • {post.gender}
-              </p>
+          {/* Thumbnails */}
+          {post.photos.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto flex-shrink-0">
+              {post.photos.map((photo, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPhotoIndex(index)}
+                  className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                    currentPhotoIndex === index
+                      ? "border-red-600"
+                      : "border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  <Image
+                    src={`${BASE_URL}${photo}`}
+                    alt={`Photo ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </button>
+              ))}
             </div>
+          )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <InfoItem label="Age" value={`${post.age} months`} />
-              <InfoItem label="Location" value={post.location} />
-              <InfoItem label="Species" value={post.species} />
-              <InfoItem label="Gender" value={post.gender} />
+          {/* Details Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-5 space-y-4 flex-shrink-0">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-gray-500">Species</p>
+                <p className="font-semibold text-gray-800 text-sm">{post.species}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Gender</p>
+                <p className="font-semibold text-gray-800 text-sm">{post.gender}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Age</p>
+                <p className="font-semibold text-gray-800 text-sm">{post.age} months</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Location</p>
+                <p className="font-semibold text-gray-800 text-sm">{post.location}</p>
+              </div>
             </div>
-
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-2">
-                Description
-              </p>
-              <p className="text-gray-700 leading-relaxed">
-                {post.description}
-              </p>
+              <p className="text-xs text-gray-500 mb-1">Description</p>
+              <p className="text-gray-700 text-sm leading-relaxed">{post.description}</p>
             </div>
           </div>
         </div>
 
-        {/* RIGHT SIDE — Subtle Info Panel */}
-        <div className="space-y-6">
-          <div className="sticky top-24">
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4">
-              
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400">
-                  Animal Reference ID
-                </p>
-                <p className="text-sm font-semibold text-gray-800 break-all mt-1">
-                  {post._id}
-                </p>
-              </div>
+        {/* RIGHT — Sidebar, scrollable if needed */}
+        <div className="flex flex-col gap-4 min-h-0 overflow-y-auto">
+          {/* Status Card */}
+          <div
+            className={`rounded-2xl p-5 text-white flex-shrink-0 ${
+              post.status === "Available" ? "bg-green-600" : "bg-blue-600"
+            }`}
+          >
+            <p className="text-sm opacity-90 mb-1">Current Status</p>
+            <p className="text-2xl font-bold">{post.status}</p>
+            <p className="text-xs opacity-80 mt-1">
+              {post.status === "Available"
+                ? "This animal is looking for a home 🐾"
+                : "This animal has found a home 🏠"}
+            </p>
+          </div>
 
-              <button
-                onClick={copyAnimalId}
-                className="text-sm text-white bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition"
-              >
-                Copy ID
-              </button>
-
-              <p className="text-xs text-gray-500 leading-relaxed">
-                For adoption inquiries, please send this ID together with
-                a screenshot of the animal profile to our admin team.
+          {/* How to Adopt Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-5 space-y-3 flex-shrink-0">
+            <h3 className="text-sm font-semibold text-gray-800">How to Adopt</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Send this Reference ID along with a screenshot of this profile to our admin team.
+            </p>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+                Reference ID
               </p>
-
-              <p className="text-xs text-gray-400">
-                Posted on {new Date(post.createdAt).toLocaleDateString()}
+              <p className="text-xs font-semibold text-gray-800 break-all bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                {post._id}
               </p>
             </div>
+            <button
+              onClick={copyAnimalId}
+              className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-semibold transition text-sm"
+            >
+              <HiClipboardCopy size={15} />
+              Copy Reference ID
+            </button>
+          </div>
+
+          {/* Metadata */}
+          <div className="text-gray-400 text-xs space-y-1 pt-3 border-t border-gray-200 flex-shrink-0">
+            <p>Posted: {new Date(post.createdAt).toLocaleDateString()}</p>
+            <p>Updated: {new Date(post.updatedAt).toLocaleDateString()}</p>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function InfoItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-sm text-gray-500 mb-1">{label}</p>
-      <p className="font-semibold text-gray-800">{value}</p>
     </div>
   );
 }
