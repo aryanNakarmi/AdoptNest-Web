@@ -173,10 +173,10 @@ export default function AdoptPage() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-2xl shadow-md p-4 mb-4 border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <HiChevronDown size={20} className="text-red-600" />
+            
               Filters
               {activeFiltersCount > 0 && (
                 <span className="ml-2 bg-red-100 text-red-600 text-xs font-bold px-2.5 py-1 rounded-full">
@@ -357,7 +357,7 @@ export default function AdoptPage() {
                     </div>
 
                     <Link
-                      href={`/animal/${post._id}`}
+                      href={`/user/adopt/${post._id}`}
                       className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg transition font-semibold"
                     >
                       View Details
