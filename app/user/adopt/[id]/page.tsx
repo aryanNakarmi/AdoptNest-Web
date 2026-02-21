@@ -209,8 +209,8 @@ export default function UserAnimalDetailPage() {
             <p className="text-2xl font-bold">{post.status}</p>
             <p className="text-xs opacity-80 mt-1">
               {post.status === "Available"
-                ? "This animal is looking for a home 🐾"
-                : "This animal has found a home 🏠"}
+                ? "This animal is looking for a home "
+                : "This animal has found a home "}
             </p>
           </div>
 
