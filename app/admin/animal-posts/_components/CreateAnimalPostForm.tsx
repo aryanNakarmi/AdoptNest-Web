@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { HiX, HiPlus } from 'react-icons/hi';
 import { handleCreateAnimalPost } from '@/lib/actions/animal-action';
 
-const SPECIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Guinea Pig', 'Other'];
 const GENDERS = ['Male', 'Female'];
 
 interface FormData {
@@ -36,15 +35,26 @@ export default function CreateAnimalPostForm() {
   });
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+      const { name, value } = e.target;
 
+      let formattedValue = value;
+
+      // Auto-format species to Title Case
+      if (name === "species") {
+        formattedValue = value
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formattedValue,
+      }));
+    };
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
@@ -191,26 +201,20 @@ export default function CreateAnimalPostForm() {
 
         {/* Form Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Species Dropdown */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Species *
-            </label>
-            <select
-              name="species"
-              value={formData.species}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-medium hover:border-gray-400 transition"
-            >
-              <option value="">-- Select Species --</option>
-              {SPECIES.map((sp) => (
-                <option key={sp} value={sp}>
-                  {sp}
-                </option>
-              ))}
-            </select>
-          </div>
-
+          {/* Species Input */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Species *
+          </label>
+          <input
+            type="text"
+            name="species"
+            value={formData.species}
+            onChange={handleInputChange}
+            placeholder="e.g., Dog, Parrot, African Grey"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 hover:border-gray-400 transition"
+          />
+        </div>
           {/* Gender Dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
