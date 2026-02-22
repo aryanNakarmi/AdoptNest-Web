@@ -1,231 +1,370 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { toast } from 'react-toastify';
-import { HiPlus, HiEye } from 'react-icons/hi';
-import { handleGetAllAnimalPosts } from '@/lib/actions/animal-action';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { toast } from "react-toastify";
+import { HiChat, HiPaperAirplane, HiRefresh } from "react-icons/hi";
+import { io, Socket } from "socket.io-client";
+import axios from "@/lib/api/axios";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:5050';
+const SOCKET_URL = "http://localhost:5050";
 
-interface AnimalPost {
+interface Message {
   _id: string;
-  species: string;
-  gender: string;
-  breed: string;
-  age: number;
-  location: string;
-  description: string;
-  photos: string[];
-  status: 'Available' | 'Adopted';
-  adoptedBy?: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
+  chatId: string;
+  senderId: { _id: string; fullName: string; email: string; role: string };
+  senderRole: "user" | "admin";
+  content: string;
+  isRead: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
-export default function AdminAnimalsPage() {
-  const [posts, setPosts] = useState<AnimalPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'Available' | 'Adopted'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+interface Chat {
+  _id: string;
+  userId: { _id: string; fullName: string; email: string };
+  lastMessage?: string;
+  lastMessageAt?: string;
+  createdAt: string;
+}
 
+const getAuthToken = () => {
+  if (typeof document === "undefined") return null;
+  const cookies = document.cookie.split(";");
+  for (let c of cookies) {
+    c = c.trim();
+    if (c.startsWith("auth_token="))
+      return decodeURIComponent(c.substring("auth_token=".length));
+  }
+  return null;
+};
+
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+const formatMessageTime = (dateString: string) => {
+  return new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+export default function AdminChatPage() {
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loadingChats, setLoadingChats] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const selectedChatRef = useRef<Chat | null>(null);
+
+  // Keep ref in sync so socket handler always has latest value
   useEffect(() => {
-    fetchPosts();
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Connect socket once on mount
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ["websocket", "polling"],
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
+    });
+
+    socket.on("new_message", (message: Message) => {
+      const currentChat = selectedChatRef.current;
+      if (currentChat && message.chatId === currentChat._id) {
+        setMessages((prev) => [...prev, message]);
+      }
+      // Update inbox preview
+      setChats((prev) =>
+        prev
+          .map((c) =>
+            c._id === message.chatId
+              ? { ...c, lastMessage: message.content, lastMessageAt: message.createdAt }
+              : c
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.lastMessageAt || b.createdAt).getTime() -
+              new Date(a.lastMessageAt || a.createdAt).getTime()
+          )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  const fetchPosts = async () => {
+  // Fetch all chats directly via axios (client-side)
+  const fetchChats = useCallback(async () => {
+    setLoadingChats(true);
     try {
-      setLoading(true);
-      const response = await handleGetAllAnimalPosts();
-      if (response.success) setPosts(response.data);
-      else toast.error(response.message || 'Failed to load posts');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load posts');
+      const res = await axios.get("/api/v1/chats");
+      if (res.data.success) setChats(res.data.data);
+      else toast.error("Failed to load chats");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load chats");
     } finally {
-      setLoading(false);
+      setLoadingChats(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  // Open a chat
+  const openChat = async (chat: Chat) => {
+    if (selectedChatRef.current?._id) {
+      socketRef.current?.emit("leave_chat", selectedChatRef.current._id);
+    }
+
+    setSelectedChat(chat);
+    setMessages([]);
+    setLoadingMessages(true);
+
+    try {
+      const res = await axios.get(`/api/v1/chats/${chat._id}/messages`);
+      if (res.data.success) {
+        setMessages(res.data.data.messages || []);
+        // Mark as read
+        await axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load messages");
+    } finally {
+      setLoadingMessages(false);
+    }
+
+    socketRef.current?.emit("join_chat", chat._id);
+    inputRef.current?.focus();
+  };
+
+  // Send message
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat || sending) return;
+
+    const content = newMessage.trim();
+    setNewMessage("");
+    setSending(true);
+
+    try {
+      await axios.post(`/api/v1/chats/${selectedChat._id}/messages`, { content });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to send message");
+      setNewMessage(content);
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
     }
   };
 
-  // Filter by status first
-  const filteredPosts =
-    selectedStatus === 'all' ? posts : posts.filter((p) => p.status === selectedStatus);
-
-  // Then filter by search query (breed or species)
-  const searchedPosts = filteredPosts.filter((post) => {
-    const query = searchQuery.toLowerCase();
-    return post._id.toLowerCase().includes(query) ||
-      post.breed.toLowerCase().includes(query) 
-    || post.species.toLowerCase().includes(query);
-  });
-
-  const getStatusColor = (status: string) =>
-    status === 'Available'
-      ? 'bg-green-100 text-green-800 border-green-300'
-      : 'bg-blue-100 text-blue-800 border-blue-300';
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Animal Posts</h1>
-          <p className="text-gray-500 mt-1">Manage all animal adoption posts</p>
-        </div>
-        <Link
-          href="/admin/animal-posts/create"
-          className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow hover:bg-red-700 transition"
-        >
-          <HiPlus size={18} />
-          Create Post
-        </Link>
-      </div>
+    <div className="flex gap-0 h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow border border-gray-200">
 
-      {/* Search Bar */}
-      <div className="flex justify-end relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by breed or species..."
-          className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none
-          focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-3
-          text-black placeholder-black/50 pr-10"
-        />
-        {/* Clear button */}
-        {searchQuery && (
+      {/* ===== LEFT — Inbox ===== */}
+      <div className="w-80 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Messages</h2>
+            <p className="text-xs text-gray-500">
+              {chats.length} conversation{chats.length !== 1 ? "s" : ""}
+            </p>
+          </div>
           <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-5 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            onClick={fetchChats}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
+            title="Refresh"
           >
-            &#10005; {/* X icon */}
+            <HiRefresh size={18} />
           </button>
-        )}
-      </div>
-
-      {/* Status Filter Tabs */}
-      <div className="flex flex-wrap gap-3 bg-white p-3 rounded-lg border border-gray-200">
-        {['all', 'Available', 'Adopted'].map((status) => {
-          const label =
-            status === 'all'
-              ? `All Posts (${posts.length})`
-              : `${status} (${posts.filter((p) => p.status === status).length})`;
-          return (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status as 'all' | 'Available' | 'Adopted')}
-              className={`px-4 py-1.5 rounded-lg font-medium transition ${
-                selectedStatus === status
-                  ? 'bg-red-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Loading / Empty State */}
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600"></div>
         </div>
-      ) : searchedPosts.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
-          <p className="text-black text-lg mb-4">No posts found</p>
-          <Link
-            href="/admin/animal-posts/create"
-            className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition font-medium"
-          >
-            <HiPlus size={18} />
-            Create Post
-          </Link>
-        </div>
-      ) : (
-        /* Posts Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {searchedPosts.map((post) => (
-            <div
-              key={post._id}
-              className="rounded-xl shadow-md border border-gray-200 overflow-hidden transition transform hover:scale-105 hover:shadow-lg bg-white"
-            >
-              {/* Image */}
-              <div className="relative h-40 bg-gray-200">
-                {post.photos?.[0] ? (
-                  <Image
-                    src={`${BASE_URL}${post.photos[0]}`}
-                    alt={post.breed}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                    <span className="text-gray-600 font-medium text-sm">No Image</span>
-                  </div>
-                )}
 
-                {/* Photo Count Badge */}
-                {post.photos?.length > 0 && (
-                  <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-bold">
-                    {post.photos.length} photos
-                  </div>
-                )}
+        <div className="flex-1 overflow-y-auto">
+          {loadingChats ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+            </div>
+          ) : chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2 p-6">
+              <HiChat size={36} />
+              <p className="text-sm text-center">No conversations yet</p>
+            </div>
+          ) : (
+            chats.map((chat) => {
+              const isActive = selectedChat?._id === chat._id;
+              const initials =
+                chat.userId?.fullName
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "?";
 
-                {/* Status Badge */}
-                <div className="absolute top-2 right-2">
-                  <div
-                    className={`px-2 py-0.5 rounded-full text-xs font-bold border-2 ${getStatusColor(
-                      post.status
-                    )}`}
-                  >
-                    {post.status}
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-4 space-y-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 capitalize">{post.breed}</h3>
-                  <p className="text-sm text-gray-500">
-                    {post.species} • {post.gender} • {post.age}m
-                  </p>
-                </div>
-
-                <div className="text-sm text-gray-600 space-y-0.5">
-                  <p>{post.location}</p>
-                  {post.adoptedBy && post.status === 'Adopted' && (
-                    <p className="text-xs text-blue-600 font-semibold">
-                      Adopted by: {post.adoptedBy.fullName}
-                    </p>
-                  )}
-                </div>
-
-                <p className="text-gray-700 text-sm line-clamp-2">{post.description}</p>
-
-                <Link
-                  href={`/admin/animal-posts/${post._id}`}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+              return (
+                <button
+                  key={chat._id}
+                  onClick={() => openChat(chat)}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-gray-100 hover:bg-gray-50 ${
+                    isActive ? "bg-red-50 border-l-4 border-l-red-600" : ""
+                  }`}
                 >
-                  <HiEye size={16} />
-                  View Details
-                </Link>
+                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-600 text-sm font-bold">{initials}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className={`text-sm font-semibold truncate ${isActive ? "text-red-600" : "text-gray-900"}`}>
+                        {chat.userId?.fullName || "Unknown User"}
+                      </p>
+                      {chat.lastMessageAt && (
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {formatTime(chat.lastMessageAt)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                      {chat.lastMessage || "No messages yet"}
+                    </p>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
 
-                <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
-                  Created: {new Date(post.createdAt).toLocaleDateString()}
+      {/* ===== RIGHT — Conversation ===== */}
+      <div className="flex-1 flex flex-col bg-gray-50">
+        {selectedChat ? (
+          <>
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-red-600 font-bold text-sm">
+                  {selectedChat.userId?.fullName
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2) || "?"}
+                </span>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">
+                  {selectedChat.userId?.fullName || "Unknown User"}
                 </p>
+                <p className="text-xs text-gray-500">{selectedChat.userId?.email}</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              {loadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+                  <HiChat size={40} />
+                  <p className="text-sm">No messages yet — say hello!</p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isAdmin = msg.senderRole === "admin";
+                  return (
+                    <div key={msg._id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                          isAdmin
+                            ? "bg-red-600 text-white rounded-br-sm"
+                            : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm"
+                        }`}
+                      >
+                        <p className="leading-relaxed break-words">{msg.content}</p>
+                        <p className={`text-xs mt-1 ${isAdmin ? "text-red-200" : "text-gray-400"}`}>
+                          {formatMessageTime(msg.createdAt)}
+                          {isAdmin && msg.isRead && <span className="ml-1 opacity-70">✓✓</span>}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a message..."
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 placeholder-gray-400 text-sm bg-gray-50"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || sending}
+                className="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-xl hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                {sending ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <HiPaperAirplane size={18} className="rotate-90" />
+                )}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+              <HiChat size={32} className="text-gray-300" />
+            </div>
+            <p className="text-base font-medium text-gray-500">Select a conversation</p>
+            <p className="text-sm text-gray-400">Choose from the inbox on the left</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
