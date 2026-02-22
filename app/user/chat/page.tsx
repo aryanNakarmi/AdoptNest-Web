@@ -129,8 +129,13 @@ export default function UserChatPage() {
           socketRef.current?.emit("join_chat", chat._id);
 
           // Mark admin messages as read
-          await axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
-        }
+
+      
+          // Delay mark-as-read by 2 seconds so sidebar can poll the count first
+setTimeout(() => {
+  axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
+}, 2000);    
+       }
       } catch (err: any) {
         toast.error(err.response?.data?.message || "Failed to load chat");
       } finally {

@@ -218,7 +218,7 @@ export default function UserAnimalDetailPage() {
           <div className="bg-white rounded-2xl shadow-lg p-5 space-y-3 flex-shrink-0">
             <h3 className="text-sm font-semibold text-gray-800">How to Adopt</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Send this Reference ID along with a screenshot of this profile to our admin team.
+              Send this Reference ID along with the detail to our admin team.
             </p>
             <div>
               <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">

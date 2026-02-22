@@ -80,13 +80,7 @@ function UserAvatar({
   if (profilePicture) {
     return (
       <div className={`${dim} rounded-full overflow-hidden flex-shrink-0 relative`}>
-        <Image
-          src={`${BASE_URL}${profilePicture}`}
-          alt={fullName || "User"}
-          fill
-          className="object-cover"
-          unoptimized
-        />
+        <Image src={`${BASE_URL}${profilePicture}`} alt={fullName || "User"} fill className="object-cover" unoptimized />
       </div>
     );
   }
@@ -106,6 +100,9 @@ export default function AdminChatPage() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // unreadMap: chatId -> unread count
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
 
   const [showUsers, setShowUsers] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -127,12 +124,17 @@ export default function AdminChatPage() {
     if (!token) return;
     const socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket", "polling"] });
     socketRef.current = socket;
+
     socket.on("connect", () => console.log("Socket connected:", socket.id));
     socket.on("connect_error", (err) => console.error("Socket error:", err.message));
+
     socket.on("new_message", (message: Message) => {
+      // Add to messages if this chat is open
       if (selectedChatRef.current?._id === message.chatId) {
         setMessages((prev) => [...prev, message]);
       }
+
+      // Update inbox last message preview
       setChats((prev) =>
         prev.map((c) =>
           c._id === message.chatId
@@ -143,21 +145,37 @@ export default function AdminChatPage() {
           new Date(a.lastMessageAt || a.createdAt).getTime()
         )
       );
+
+      // If message is from user and this chat is NOT currently open → increment badge
+      if (message.senderRole === "user" && selectedChatRef.current?._id !== message.chatId) {
+        setUnreadMap((prev) => ({
+          ...prev,
+          [message.chatId]: (prev[message.chatId] || 0) + 1,
+        }));
+      }
     });
+
     return () => { socket.disconnect(); };
   }, []);
 
   const fetchChats = useCallback(async () => {
-    setLoadingChats(true);
-    try {
-      const res = await axios.get("/api/v1/chats");
-      if (res.data.success) setChats(res.data.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load chats");
-    } finally {
-      setLoadingChats(false);
+  setLoadingChats(true);
+  try {
+    const res = await axios.get("/api/v1/chats");
+    if (res.data.success) {
+      setChats(res.data.data);
+      const initialUnread: Record<string, number> = {};
+      (res.data.data || []).forEach((c: any) => {
+        if (c.unreadCount > 0) initialUnread[c._id] = c.unreadCount;
+      });
+      setUnreadMap(initialUnread);
     }
-  }, []);
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "Failed to load chats");
+  } finally {
+    setLoadingChats(false);
+  }
+}, []);
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
@@ -214,12 +232,18 @@ export default function AdminChatPage() {
     setSelectedChat(chat);
     setMessages([]);
     setLoadingMessages(true);
+
+    // Clear badge for this chat
+    setUnreadMap((prev) => ({ ...prev, [chat._id]: 0 }));
+
     try {
       const res = await axios.get(`/api/v1/chats/${chat._id}/messages`);
-      if (res.data.success) {
-        setMessages(res.data.data.messages || []);
-        await axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
-      }
+    if (res.data.success) {
+      setMessages(res.data.data.messages || []);
+      await axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
+      // ← ADD THIS
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load messages");
     } finally {
@@ -256,6 +280,9 @@ export default function AdminChatPage() {
 
   const userHasChat = (userId: string) => chats.some((c) => c.userId?._id === userId);
 
+  // Total unread across all chats (for header)
+  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
+
   return (
     <div className="flex gap-0 h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow border border-gray-200">
 
@@ -263,7 +290,15 @@ export default function AdminChatPage() {
       <div className="w-80 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Messages</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900">Messages</h2>
+              {/* Total unread badge in header */}
+              {totalUnread > 0 && (
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                  {totalUnread > 99 ? "99+" : totalUnread}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500">{chats.length} conversation{chats.length !== 1 ? "s" : ""}</p>
           </div>
           <div className="flex items-center gap-1">
@@ -336,19 +371,34 @@ export default function AdminChatPage() {
             ) : (
               chats.map((chat) => {
                 const isActive = selectedChat?._id === chat._id;
+                const chatUnread = unreadMap[chat._id] || 0;
                 return (
-                  <button key={chat._id} onClick={() => openChat(chat)} className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-gray-100 hover:bg-gray-50 ${isActive ? "bg-red-50 border-l-4 border-l-red-600" : ""}`}>
+                  <button
+                    key={chat._id}
+                    onClick={() => openChat(chat)}
+                    className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-gray-100 hover:bg-gray-50 ${isActive ? "bg-red-50 border-l-4 border-l-red-600" : ""}`}
+                  >
                     <UserAvatar profilePicture={chat.userId?.profilePicture} fullName={chat.userId?.fullName} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className={`text-sm font-semibold truncate ${isActive ? "text-red-600" : "text-gray-900"}`}>
                           {chat.userId?.fullName || "Unknown User"}
                         </p>
-                        {chat.lastMessageAt && (
-                          <span className="text-xs text-gray-400 flex-shrink-0">{formatTime(chat.lastMessageAt)}</span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {/* Per-conversation unread badge */}
+                          {chatUnread > 0 && (
+                            <span className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                              {chatUnread > 9 ? "9+" : chatUnread}
+                            </span>
+                          )}
+                          {chat.lastMessageAt && (
+                            <span className="text-xs text-gray-400">{formatTime(chat.lastMessageAt)}</span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{chat.lastMessage || "No messages yet"}</p>
+                      <p className={`text-xs truncate mt-0.5 ${chatUnread > 0 ? "text-gray-800 font-semibold" : "text-gray-500"}`}>
+                        {chat.lastMessage || "No messages yet"}
+                      </p>
                     </div>
                   </button>
                 );
