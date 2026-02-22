@@ -29,5 +29,13 @@ export const API = {
         DELETE: (id: string) => `/api/v1/animal-posts/${id}`,
         UPDATE_STATUS: (id: string) => `/api/v1/animal-posts/${id}/status`,
         BY_SPECIES: (species: string) => `/api/v1/animal-posts/species/${species}`,
+    },
+     CHAT: {
+        GET_ALL: '/api/v1/chats',
+        GET_MESSAGES: (chatId: string) => `/api/v1/chats/${chatId}/messages`,
+        SEND_ADMIN_MESSAGE: (chatId: string) => `/api/v1/chats/${chatId}/messages`,
+        MARK_READ: (chatId: string) => `/api/v1/chats/${chatId}/read`,
+        MY_CHAT: '/api/v1/chats/my-chat',
+        SEND_USER_MESSAGE: '/api/v1/chats/my-chat/messages',
     }
 }
