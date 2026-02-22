@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { HiChat, HiPaperAirplane, HiRefresh } from "react-icons/hi";
+import { HiChat, HiPaperAirplane, HiRefresh, HiSearch, HiUsers } from "react-icons/hi";
 import { io, Socket } from "socket.io-client";
-import {
-  handleGetAllChats,
-  handleGetChatMessages,
-  handleSendAdminMessage,
-  handleMarkAsRead,
-} from "@/lib/actions/chat-action";
+import Image from "next/image";
+import axios from "@/lib/api/axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5050";
+const SOCKET_URL = "http://localhost:5050";
+const BASE_URL = "http://localhost:5050";
 
 interface Message {
   _id: string;
@@ -25,10 +22,18 @@ interface Message {
 
 interface Chat {
   _id: string;
-  userId: { _id: string; fullName: string; email: string };
+  userId: { _id: string; fullName: string; email: string; profilePicture?: string };
   lastMessage?: string;
   lastMessageAt?: string;
   createdAt: string;
+}
+
+interface User {
+  _id: string;
+  fullName?: string;
+  email: string;
+  profilePicture?: string | null;
+  role: string;
 }
 
 const getAuthToken = () => {
@@ -56,12 +61,42 @@ const formatTime = (dateString: string) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const formatMessageTime = (dateString: string) => {
-  return new Date(dateString).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const formatMessageTime = (dateString: string) =>
+  new Date(dateString).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+function UserAvatar({
+  profilePicture,
+  fullName,
+  size = "md",
+}: {
+  profilePicture?: string | null;
+  fullName?: string;
+  size?: "sm" | "md";
+}) {
+  const dim = size === "sm" ? "w-8 h-8" : "w-10 h-10";
+  const textSize = size === "sm" ? "text-xs" : "text-sm";
+  const initials = fullName?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+
+  if (profilePicture) {
+    return (
+      <div className={`${dim} rounded-full overflow-hidden flex-shrink-0 relative`}>
+        <Image
+          src={`${BASE_URL}${profilePicture}`}
+          alt={fullName || "User"}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${dim} rounded-full bg-red-100 flex items-center justify-center flex-shrink-0`}>
+      <span className={`text-red-600 ${textSize} font-bold`}>{initials}</span>
+    </div>
+  );
+}
 
 export default function AdminChatPage() {
   const [chats, setChats] = useState<Chat[]>([]);
@@ -72,32 +107,32 @@ export default function AdminChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [showUsers, setShowUsers] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [startingChat, setStartingChat] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectedChatRef = useRef<Chat | null>(null);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   // Connect socket
   useEffect(() => {
     const token = getAuthToken();
     if (!token) return;
-
-    const socket = io(BASE_URL, { auth: { token } });
+    const socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket", "polling"] });
     socketRef.current = socket;
-
+    socket.on("connect", () => console.log("Socket connected:", socket.id));
+    socket.on("connect_error", (err) => console.error("Socket error:", err.message));
     socket.on("new_message", (message: Message) => {
-      // Add message if it belongs to the open chat
-      setMessages((prev) => {
-        if (prev.length > 0 && prev[0]?.chatId === message.chatId) {
-          return [...prev, message];
-        }
-        return prev;
-      });
-      // Update last message preview in inbox
+      if (selectedChatRef.current?._id === message.chatId) {
+        setMessages((prev) => [...prev, message]);
+      }
       setChats((prev) =>
         prev.map((c) =>
           c._id === message.chatId
@@ -109,178 +144,232 @@ export default function AdminChatPage() {
         )
       );
     });
-
-    return () => {
-      socket.disconnect();
-    };
+    return () => { socket.disconnect(); };
   }, []);
 
-  // Fetch all chats
   const fetchChats = useCallback(async () => {
     setLoadingChats(true);
-    const res = await handleGetAllChats();
-    if (res.success) setChats(res.data);
-    else toast.error(res.message || "Failed to load chats");
-    setLoadingChats(false);
+    try {
+      const res = await axios.get("/api/v1/chats");
+      if (res.data.success) setChats(res.data.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load chats");
+    } finally {
+      setLoadingChats(false);
+    }
   }, []);
 
-  useEffect(() => {
-    fetchChats();
-  }, [fetchChats]);
+  useEffect(() => { fetchChats(); }, [fetchChats]);
 
-  // Open a chat
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await axios.get("/api/v1/admin/users?page=1&size=100");
+      if (res.data.success) {
+        setUsers((res.data.data || []).filter((u: User) => u.role !== "admin"));
+      }
+    } catch {
+      toast.error("Failed to load users");
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleShowUsers = () => {
+    setShowUsers(true);
+    if (users.length === 0) fetchUsers();
+  };
+
+  const startConversation = async (user: User) => {
+    setStartingChat(user._id);
+    try {
+      const res = await axios.post(`/api/v1/chats/start/${user._id}`);
+      if (res.data.success) {
+        await fetchChats();
+        setShowUsers(false);
+        setUserSearch("");
+        const enrichedChat: Chat = {
+          ...res.data.data,
+          userId: {
+            _id: user._id,
+            fullName: user.fullName || "",
+            email: user.email,
+            profilePicture: user.profilePicture || undefined,
+          },
+        };
+        openChat(enrichedChat);
+        toast.success(`Conversation started with ${user.fullName || user.email}`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to start conversation");
+    } finally {
+      setStartingChat(null);
+    }
+  };
+
   const openChat = async (chat: Chat) => {
-    // Leave previous room
-    if (selectedChat) {
-      socketRef.current?.emit("leave_chat", selectedChat._id);
+    if (selectedChatRef.current?._id) {
+      socketRef.current?.emit("leave_chat", selectedChatRef.current._id);
     }
-
     setSelectedChat(chat);
-    setLoadingMessages(true);
     setMessages([]);
-
-    const res = await handleGetChatMessages(chat._id);
-    if (res.success && res.data) {
-      setMessages(res.data.messages || []);
-      await handleMarkAsRead(chat._id);
-    } else {
-      toast.error("Failed to load messages");
+    setLoadingMessages(true);
+    try {
+      const res = await axios.get(`/api/v1/chats/${chat._id}/messages`);
+      if (res.data.success) {
+        setMessages(res.data.data.messages || []);
+        await axios.put(`/api/v1/chats/${chat._id}/read`).catch(() => {});
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load messages");
+    } finally {
+      setLoadingMessages(false);
     }
-
-    setLoadingMessages(false);
-
-    // Join socket room
     socketRef.current?.emit("join_chat", chat._id);
     inputRef.current?.focus();
   };
 
-  // Send message
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || sending) return;
-
     const content = newMessage.trim();
     setNewMessage("");
     setSending(true);
-
-    const res = await handleSendAdminMessage(selectedChat._id, content);
-    if (!res.success) {
-      toast.error(res.message || "Failed to send message");
-      setNewMessage(content); // restore on fail
+    try {
+      await axios.post(`/api/v1/chats/${selectedChat._id}/messages`, { content });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to send message");
+      setNewMessage(content);
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
     }
-
-    setSending(false);
-    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.toLowerCase();
+    return u.fullName?.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+  });
+
+  const userHasChat = (userId: string) => chats.some((c) => c.userId?._id === userId);
 
   return (
     <div className="flex gap-0 h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow border border-gray-200">
 
-      {/* ===== LEFT — Inbox ===== */}
+      {/* LEFT — Inbox */}
       <div className="w-80 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Messages</h2>
             <p className="text-xs text-gray-500">{chats.length} conversation{chats.length !== 1 ? "s" : ""}</p>
           </div>
-          <button
-            onClick={fetchChats}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
-            title="Refresh"
-          >
-            <HiRefresh size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={handleShowUsers} className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition" title="Start new conversation">
+              <HiUsers size={18} />
+            </button>
+            <button onClick={fetchChats} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition" title="Refresh">
+              <HiRefresh size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Chat list */}
-        <div className="flex-1 overflow-y-auto">
-          {loadingChats ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+        {showUsers ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 py-3 bg-red-50 border-b border-red-100 flex items-center justify-between">
+              <p className="text-sm font-semibold text-red-700">Start a Conversation</p>
+              <button onClick={() => { setShowUsers(false); setUserSearch(""); }} className="text-xs text-gray-500 hover:text-gray-700">✕ Close</button>
             </div>
-          ) : chats.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2 p-6">
-              <HiChat size={36} />
-              <p className="text-sm text-center">No conversations yet</p>
+            <div className="px-3 py-2 border-b border-gray-100">
+              <div className="relative">
+                <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                <input type="text" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Search users..." className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900" />
+              </div>
             </div>
-          ) : (
-            chats.map((chat) => {
-              const isActive = selectedChat?._id === chat._id;
-              const initials = chat.userId?.fullName
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2) || "?";
-
-              return (
-                <button
-                  key={chat._id}
-                  onClick={() => openChat(chat)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-gray-100 hover:bg-gray-50 ${
-                    isActive ? "bg-red-50 border-l-4 border-l-red-600" : ""
-                  }`}
-                >
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-600 text-sm font-bold">{initials}</span>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <p className={`text-sm font-semibold truncate ${isActive ? "text-red-600" : "text-gray-900"}`}>
-                        {chat.userId?.fullName || "Unknown User"}
-                      </p>
-                      {chat.lastMessageAt && (
-                        <span className="text-xs text-gray-400 flex-shrink-0">
-                          {formatTime(chat.lastMessageAt)}
-                        </span>
-                      )}
+            <div className="flex-1 overflow-y-auto">
+              {loadingUsers ? (
+                <div className="flex justify-center items-center h-24">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600" />
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <p className="text-center text-sm text-gray-400 py-8">No users found</p>
+              ) : (
+                filteredUsers.map((user) => {
+                  const hasChat = userHasChat(user._id);
+                  const isStarting = startingChat === user._id;
+                  return (
+                    <div key={user._id} className="px-4 py-3 flex items-center gap-3 border-b border-gray-100 hover:bg-gray-50">
+                      <UserAvatar profilePicture={user.profilePicture} fullName={user.fullName} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{user.fullName || "Unknown"}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={() => startConversation(user)}
+                        disabled={isStarting}
+                        className={`text-xs px-2.5 py-1 rounded-lg font-medium transition flex-shrink-0 ${hasChat ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-red-600 text-white hover:bg-red-700"} disabled:opacity-50`}
+                      >
+                        {isStarting ? "..." : hasChat ? "Open" : "Chat"}
+                      </button>
                     </div>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                      {chat.lastMessage || "No messages yet"}
-                    </p>
-                  </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            {loadingChats ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+              </div>
+            ) : chats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3 p-6">
+                <HiChat size={36} />
+                <p className="text-sm text-center">No conversations yet</p>
+                <button onClick={handleShowUsers} className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition">
+                  Start a conversation
                 </button>
-              );
-            })
-          )}
-        </div>
+              </div>
+            ) : (
+              chats.map((chat) => {
+                const isActive = selectedChat?._id === chat._id;
+                return (
+                  <button key={chat._id} onClick={() => openChat(chat)} className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-gray-100 hover:bg-gray-50 ${isActive ? "bg-red-50 border-l-4 border-l-red-600" : ""}`}>
+                    <UserAvatar profilePicture={chat.userId?.profilePicture} fullName={chat.userId?.fullName} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className={`text-sm font-semibold truncate ${isActive ? "text-red-600" : "text-gray-900"}`}>
+                          {chat.userId?.fullName || "Unknown User"}
+                        </p>
+                        {chat.lastMessageAt && (
+                          <span className="text-xs text-gray-400 flex-shrink-0">{formatTime(chat.lastMessageAt)}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{chat.lastMessage || "No messages yet"}</p>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ===== RIGHT — Conversation ===== */}
+      {/* RIGHT — Conversation */}
       <div className="flex-1 flex flex-col bg-gray-50">
         {selectedChat ? (
           <>
-            {/* Chat header */}
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 font-bold text-sm">
-                  {selectedChat.userId?.fullName
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2) || "?"}
-                </span>
-              </div>
+              <UserAvatar profilePicture={selectedChat.userId?.profilePicture} fullName={selectedChat.userId?.fullName} />
               <div>
-                <p className="font-bold text-gray-900">
-                  {selectedChat.userId?.fullName || "Unknown User"}
-                </p>
+                <p className="font-bold text-gray-900">{selectedChat.userId?.fullName || "Unknown User"}</p>
                 <p className="text-xs text-gray-500">{selectedChat.userId?.email}</p>
               </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
               {loadingMessages ? (
                 <div className="flex justify-center items-center h-full">
@@ -295,27 +384,15 @@ export default function AdminChatPage() {
                 messages.map((msg) => {
                   const isAdmin = msg.senderRole === "admin";
                   return (
-                    <div
-                      key={msg._id}
-                      className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
-                          isAdmin
-                            ? "bg-red-600 text-white rounded-br-sm"
-                            : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm"
-                        }`}
-                      >
+                    <div key={msg._id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
+                      {!isAdmin && (
+                        <UserAvatar profilePicture={selectedChat.userId?.profilePicture} fullName={selectedChat.userId?.fullName} size="sm" />
+                      )}
+                      <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm shadow-sm mx-2 ${isAdmin ? "bg-red-600 text-white rounded-br-sm" : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm"}`}>
                         <p className="leading-relaxed break-words">{msg.content}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            isAdmin ? "text-red-200" : "text-gray-400"
-                          }`}
-                        >
+                        <p className={`text-xs mt-1 ${isAdmin ? "text-red-200" : "text-gray-400"}`}>
                           {formatMessageTime(msg.createdAt)}
-                          {isAdmin && msg.isRead && (
-                            <span className="ml-1 opacity-70">✓✓</span>
-                          )}
+                          {isAdmin && msg.isRead && <span className="ml-1 opacity-70">✓✓</span>}
                         </p>
                       </div>
                     </div>
@@ -325,7 +402,6 @@ export default function AdminChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3">
               <input
                 ref={inputRef}
@@ -333,7 +409,7 @@ export default function AdminChatPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
+                placeholder={`Message ${selectedChat.userId?.fullName || "user"}...`}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 placeholder-gray-400 text-sm bg-gray-50"
               />
               <button
@@ -350,13 +426,12 @@ export default function AdminChatPage() {
             </div>
           </>
         ) : (
-          /* Empty state — no chat selected */
           <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
               <HiChat size={32} className="text-gray-300" />
             </div>
             <p className="text-base font-medium text-gray-500">Select a conversation</p>
-            <p className="text-sm text-gray-400">Choose from the inbox on the left</p>
+            <p className="text-sm text-gray-400">Or click the users icon to start a new one</p>
           </div>
         )}
       </div>
