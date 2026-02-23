@@ -5,7 +5,11 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1`;
 export interface AnimalReport {
   _id: string;
   species: string;
-  location: string;
+  location: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
   description?: string;
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
@@ -18,11 +22,8 @@ export interface AnimalReport {
   updatedAt: string;
 }
 
-// Get token from cookies
 const getToken = () => {
   if (typeof document === "undefined") return null;
-  
-  // Get token from cookies - looking for 'auth_token' (with underscore)
   const cookies = document.cookie.split(";");
   for (let cookie of cookies) {
     cookie = cookie.trim();
@@ -33,26 +34,15 @@ const getToken = () => {
   return null;
 };
 
-// Create axios instance with auth
 const createAuthHeader = () => {
   const token = getToken();
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  return { Authorization: `Bearer ${token}` };
 };
 
 export const getMyReports = async (page: number = 1, limit: number = 10) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      console.warn("No auth_token found in cookies");
-      return {
-        success: false,
-        message: "Please log in first",
-        data: [],
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: [] };
 
     const response = await axios.get(`${API_URL}/reports/my-reports`, {
       params: { page, limit },
@@ -68,173 +58,87 @@ export const getMyReports = async (page: number = 1, limit: number = 10) => {
       pages: response.data.pages || 1,
     };
   } catch (error: any) {
-    console.error("getMyReports error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch reports",
-      data: [],
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to fetch reports", data: [] };
   }
 };
 
 export const getReportById = async (reportId: string) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-        data: null,
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: null };
 
     const response = await axios.get(`${API_URL}/reports/${reportId}`, {
       headers: createAuthHeader(),
     });
 
-    return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data,
-    };
+    return { success: response.data.success, message: response.data.message, data: response.data.data };
   } catch (error: any) {
-    console.error("getReportById error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch report",
-      data: null,
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to fetch report", data: null };
   }
 };
 
+// ── location is now an object with address, lat, lng ──────────────
 export const createReport = async (reportData: {
   species: string;
-  location: string;
+  location: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
   description?: string;
   imageUrl: string;
 }) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-        data: null,
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: null };
 
-    const response = await axios.post(
-      `${API_URL}/reports`,
-      reportData,
-      {
-        headers: createAuthHeader(),
-      }
-    );
+    const response = await axios.post(`${API_URL}/reports`, reportData, {
+      headers: createAuthHeader(),
+    });
 
-    return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data,
-    };
+    return { success: response.data.success, message: response.data.message, data: response.data.data };
   } catch (error: any) {
-    console.error("createReport error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to create report",
-      data: null,
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to create report", data: null };
   }
 };
 
 export const uploadReportPhoto = async (file: File) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-        data: null,
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: null };
 
     const formData = new FormData();
     formData.append("animalReport", file);
 
-    const response = await axios.post(
-      `${API_URL}/reports/upload-photo`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Let axios set Content-Type for FormData
-        },
-      }
-    );
+    const response = await axios.post(`${API_URL}/reports/upload-photo`, formData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data, // returns imageUrl
-    };
+    return { success: response.data.success, message: response.data.message, data: response.data.data };
   } catch (error: any) {
-    console.error("uploadReportPhoto error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to upload photo",
-      data: null,
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to upload photo", data: null };
   }
 };
 
 export const deleteReport = async (reportId: string) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first" };
 
-    const response = await axios.delete(
-      `${API_URL}/reports/${reportId}`,
-      {
-        headers: createAuthHeader(),
-      }
-    );
+    const response = await axios.delete(`${API_URL}/reports/${reportId}`, {
+      headers: createAuthHeader(),
+    });
 
-    return {
-      success: response.data.success,
-      message: response.data.message,
-    };
+    return { success: response.data.success, message: response.data.message };
   } catch (error: any) {
-    console.error("deleteReport error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to delete report",
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to delete report" };
   }
 };
 
-/**
- * Get all approved reports for adoption page
- * Requires auth token (your backend requires it)
- */
 export const getApprovedReports = async (page: number = 1, limit: number = 12) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-        data: [],
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: [] };
 
     const response = await axios.get(`${API_URL}/reports/all`, {
       params: { page, limit },
@@ -250,45 +154,21 @@ export const getApprovedReports = async (page: number = 1, limit: number = 12) =
       pages: response.data.pages || 1,
     };
   } catch (error: any) {
-    console.error("getApprovedReports error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch reports",
-      data: [],
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to fetch reports", data: [] };
   }
 };
 
 export const getReportsBySpecies = async (species: string) => {
   try {
     const token = getToken();
-    
-    if (!token) {
-      return {
-        success: false,
-        message: "Please log in first",
-        data: [],
-      };
-    }
+    if (!token) return { success: false, message: "Please log in first", data: [] };
 
-    const response = await axios.get(
-      `${API_URL}/reports/species/${species}`,
-      {
-        headers: createAuthHeader(),
-      }
-    );
+    const response = await axios.get(`${API_URL}/reports/species/${species}`, {
+      headers: createAuthHeader(),
+    });
 
-    return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data || [],
-    };
+    return { success: response.data.success, message: response.data.message, data: response.data.data || [] };
   } catch (error: any) {
-    console.error("getReportsBySpecies error:", error.response?.data || error.message);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch reports",
-      data: [],
-    };
+    return { success: false, message: error.response?.data?.message || "Failed to fetch reports", data: [] };
   }
 };
