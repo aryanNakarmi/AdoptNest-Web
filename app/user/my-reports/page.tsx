@@ -11,7 +11,11 @@ import { HiMapPin } from "react-icons/hi2";
 interface AnimalReport {
   _id: string;
   species: string;
-  location: string;
+  location: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
   description?: string;
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
@@ -37,7 +41,6 @@ export default function MyReportsPage() {
     try {
       setLoading(true);
       const response = await getMyReports(page, itemsPerPage);
-
       if (response.success) {
         setReports(response.data || []);
         setTotalPages(response.pages || 1);
@@ -56,11 +59,9 @@ export default function MyReportsPage() {
 
   const handleDeleteReport = async (reportId: string, reportSpecies: string) => {
     if (!window.confirm(`Are you sure you want to delete the ${reportSpecies} report?`)) return;
-
     try {
       setDeleting(reportId);
       const response = await deleteReport(reportId);
-
       if (response.success) {
         toast.success("Report deleted successfully");
         setSelectedReport(null);
@@ -77,23 +78,17 @@ export default function MyReportsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-50 border-green-200 text-green-700";
-      case "rejected":
-        return "bg-red-50 border-red-200 text-red-700";
-      default:
-        return "bg-orange-50 border-orange-200 text-orange-700";
+      case "approved": return "bg-green-50 border-green-200 text-green-700";
+      case "rejected": return "bg-red-50 border-red-200 text-red-700";
+      default: return "bg-orange-50 border-orange-200 text-orange-700";
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-orange-100 text-orange-800";
+      case "approved": return "bg-green-100 text-green-800";
+      case "rejected": return "bg-red-100 text-red-800";
+      default: return "bg-orange-100 text-orange-800";
     }
   };
 
@@ -101,9 +96,7 @@ export default function MyReportsPage() {
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year: "numeric", month: "short", day: "numeric",
     });
 
   return (
@@ -129,7 +122,7 @@ export default function MyReportsPage() {
       {/* Loading */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600" />
         </div>
       ) : reports.length === 0 ? (
         <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-12 text-center border border-red-100 shadow-sm">
@@ -151,7 +144,6 @@ export default function MyReportsPage() {
         </div>
       ) : (
         <>
-          {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {reports.map((report) => (
               <div
@@ -159,7 +151,6 @@ export default function MyReportsPage() {
                 className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 relative cursor-pointer transform hover:scale-105"
                 onClick={() => setSelectedReport(report)}
               >
-                {/* Image Container */}
                 <div className="w-full h-48 relative overflow-hidden bg-gray-200">
                   {report.imageUrl ? (
                     <Image
@@ -174,8 +165,6 @@ export default function MyReportsPage() {
                       <span className="text-gray-500 text-sm font-medium">No image</span>
                     </div>
                   )}
-
-                  {/* Status Badge */}
                   <div className="absolute top-3 right-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(report.status)}`}>
                       {getStatusText(report.status)}
@@ -183,14 +172,14 @@ export default function MyReportsPage() {
                   </div>
                 </div>
 
-                {/* Content */}
                 <div className="p-4">
                   <h3 className="font-bold text-gray-900 capitalize text-base mb-1 line-clamp-1">
                     {report.species}
                   </h3>
+                  {/* ✅ Fixed: access .address */}
                   <p className="text-gray-500 text-sm flex items-center gap-1 mb-3">
                     <HiMapPin size={14} />
-                    <span className="line-clamp-1">{report.location}</span>
+                    <span className="line-clamp-1">{report.location.address}</span>
                   </p>
                   {report.description && (
                     <p className="text-gray-600 text-sm line-clamp-2 mb-3 leading-relaxed">
@@ -206,7 +195,6 @@ export default function MyReportsPage() {
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 mt-8">
               <button
@@ -216,12 +204,10 @@ export default function MyReportsPage() {
               >
                 Previous
               </button>
-
               <span className="text-sm text-gray-600">
                 Page <strong className="text-gray-900">{currentPage}</strong> of{" "}
                 <strong className="text-gray-900">{totalPages}</strong>
               </span>
-
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage >= totalPages}
@@ -244,7 +230,6 @@ export default function MyReportsPage() {
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 duration-300 flex flex-col"
           >
-            {/* Image Section - Top with Close Button */}
             <div className="w-full h-96 relative overflow-hidden bg-gray-200 flex-shrink-0">
               {selectedReport.imageUrl ? (
                 <Image
@@ -260,16 +245,12 @@ export default function MyReportsPage() {
                   <span className="text-gray-500">No image available</span>
                 </div>
               )}
-
-              {/* Close Button - Top Right */}
               <button
                 onClick={() => setSelectedReport(null)}
                 className="absolute top-4 right-4 z-20 p-2 bg-white/90 hover:bg-red-600 text-gray-700 hover:text-white rounded-full transition-all duration-200 shadow-lg"
               >
                 <HiX size={24} />
               </button>
-
-              {/* Delete Button - Top Left */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -280,8 +261,6 @@ export default function MyReportsPage() {
               >
                 <HiTrash size={24} />
               </button>
-
-              {/* Status Badge - Bottom Left */}
               <div className="absolute bottom-4 left-4">
                 <span className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(selectedReport.status)}`}>
                   {getStatusText(selectedReport.status)}
@@ -289,13 +268,23 @@ export default function MyReportsPage() {
               </div>
             </div>
 
-            {/* Content Section - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 sm:p-8">
               <h2 className="text-3xl font-bold capitalize text-gray-900 mb-2">{selectedReport.species}</h2>
 
-              <div className="flex items-center gap-2 text-gray-600 mb-6 font-medium">
-                <HiMapPin size={20} className="text-red-600" />
-                {selectedReport.location}
+              {/* ✅ Fixed: access .address + Google Maps link */}
+              <div className="flex items-start gap-2 text-gray-600 mb-6 font-medium">
+                <HiMapPin size={20} className="text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p>{selectedReport.location.address}</p>
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${selectedReport.location.lat}&mlon=${selectedReport.location.lng}#map=18/${selectedReport.location.lat}/${selectedReport.location.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-red-600 font-semibold hover:underline"
+                  >
+                    Open on map ↗
+                  </a>
+                </div>
               </div>
 
               {selectedReport.description && (

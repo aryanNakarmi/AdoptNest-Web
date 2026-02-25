@@ -12,7 +12,11 @@ import { Dialog, Transition } from "@headlessui/react";
 interface AnimalReport {
   _id: string;
   species: string;
-  location: string;
+    location: {       
+    address: string;
+    lat: number;
+    lng: number;
+  };
   description?: string;
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
@@ -237,7 +241,7 @@ export default function DashboardPage() {
                     {report.species}
                   </h3>
                   <p className="text-gray-500 text-sm flex items-center gap-1">
-                    {report.location}
+                    {report.location.address}
                   </p>
                   {report.description && (
                     <p className="text-gray-600 text-sm mt-2 line-clamp-2">
