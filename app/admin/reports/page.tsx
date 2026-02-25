@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { HiCheck, HiX, HiEye, HiChevronRight } from "react-icons/hi";
+import { HiMapPin } from "react-icons/hi2";
 import { toast } from "react-toastify";
 import axios from "axios";
 
@@ -11,7 +12,11 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1`;
 interface AnimalReport {
   _id: string;
   species: string;
-  location: string;
+  location: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
   description?: string;
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
@@ -37,12 +42,11 @@ const getAuthToken = () => {
 
 const createAuthHeader = () => {
   const token = getAuthToken();
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  return { Authorization: `Bearer ${token}` };
 };
 
 export default function AdminReportsPage() {
+  const [allReports, setAllReports] = useState<AnimalReport[]>([]);
   const [reports, setReports] = useState<AnimalReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,12 +70,13 @@ export default function AdminReportsPage() {
       });
 
       if (response.data.success) {
-        let filtered = response.data.data || [];
-        
-        if (selectedFilter !== "all") {
-          filtered = filtered.filter((r: AnimalReport) => r.status === selectedFilter);
-        }
-        
+        const all = response.data.data || [];
+        setAllReports(all);
+
+        const filtered = selectedFilter !== "all"
+          ? all.filter((r: AnimalReport) => r.status === selectedFilter)
+          : all;
+
         setReports(filtered);
         setTotalPages(response.data.pages || 1);
         setTotalReports(response.data.total || 0);
@@ -79,12 +84,14 @@ export default function AdminReportsPage() {
         toast.error("Failed to load reports");
       }
     } catch (error: any) {
-      console.error("Error fetching reports:", error);
       toast.error("Failed to load reports");
     } finally {
       setLoading(false);
     }
   };
+
+  const countFor = (status: string) =>
+    allReports.filter((r) => r.status === status).length;
 
   const handleApproveReport = async (reportId: string) => {
     try {
@@ -94,7 +101,6 @@ export default function AdminReportsPage() {
         { status: "approved" },
         { headers: createAuthHeader() }
       );
-
       if (response.data.success) {
         toast.success("Report approved");
         setSelectedReport(null);
@@ -114,10 +120,9 @@ export default function AdminReportsPage() {
       setActionLoading(reportId);
       const response = await axios.put(
         `${API_URL}/reports/${reportId}/status`,
-        { status: "rejected"},
+        { status: "rejected" },
         { headers: createAuthHeader() }
       );
-
       if (response.data.success) {
         toast.success("Report rejected");
         setSelectedReport(null);
@@ -134,67 +139,65 @@ export default function AdminReportsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "pending":
-      default:
-        return "bg-orange-100 text-orange-800";
+      case "approved": return "bg-green-100 text-green-800";
+      case "rejected": return "bg-red-100 text-red-800";
+      default: return "bg-orange-100 text-orange-800";
     }
   };
 
-  const getStatusText = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+  const getStatusText = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric", month: "short", day: "numeric",
     });
-  };
 
-  // Calculate the range of items being shown
   const firstItemNumber = (currentPage - 1) * itemsPerPage + 1;
   const lastItemNumber = Math.min(firstItemNumber + itemsPerPage - 1, totalReports);
 
+  const FILTERS = [
+    { key: "pending",  label: "Pending",  badge: "bg-orange-100 text-orange-700", activeBorder: "border-orange-500 text-orange-600" },
+    { key: "approved", label: "Approved", badge: "bg-green-100 text-green-700",   activeBorder: "border-green-600 text-green-600"  },
+    { key: "rejected", label: "Rejected", badge: "bg-red-100 text-red-700",       activeBorder: "border-red-600 text-red-600"      },
+  ] as const;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
-      {/* Left Side - Reports List */}
+      {/* Left — Reports List */}
       <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl shadow overflow-hidden">
-        {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Animal Reports</h2>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-1 px-4 pt-4 border-b border-gray-200">
-          {["pending", "approved", "rejected"].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => {
-                setSelectedFilter(filter as any);
-                setCurrentPage(1);
-                setSelectedReport(null);
-              }}
-              className={`px-4 py-2 font-semibold text-sm transition border-b-2 ${
-                selectedFilter === filter
-                  ? "border-red-600 text-red-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </button>
-          ))}
+        {/* Filter Tabs with counts */}
+        <div className="flex gap-0 px-4 pt-3 border-b border-gray-200">
+          {FILTERS.map(({ key, label, badge, activeBorder }) => {
+            const isActive = selectedFilter === key;
+            const count = countFor(key);
+            return (
+              <button
+                key={key}
+                onClick={() => { setSelectedFilter(key); setCurrentPage(1); setSelectedReport(null); }}
+                className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-sm transition border-b-2 ${
+                  isActive
+                    ? `${activeBorder} border-b-2`
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {label}
+                <span className={`text-xs font-bold ${isActive ? badge.split(" ")[1] : "text-gray-400"}`}>
+                  ({count})
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Reports List */}
+        {/* List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600" />
             </div>
           ) : reports.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -210,7 +213,6 @@ export default function AdminReportsPage() {
                     selectedReport?._id === report._id ? "bg-red-50" : ""
                   }`}
                 >
-                  {/* Thumbnail */}
                   <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 relative">
                     {report.imageUrl ? (
                       <Image
@@ -227,20 +229,12 @@ export default function AdminReportsPage() {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 capitalize truncate">
-                      {report.species}
-                    </h3>
-                    <p className="text-sm text-gray-500 truncate">
-                      {report.location}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {report.reportedBy?.fullName}
-                    </p>
+                    <h3 className="font-semibold text-gray-900 capitalize truncate">{report.species}</h3>
+                    <p className="text-sm text-gray-500 truncate">{report.location.address}</p>
+                    <p className="text-xs text-gray-400 mt-1">{report.reportedBy?.fullName}</p>
                   </div>
 
-                  {/* Arrow */}
                   <HiChevronRight className="text-gray-400" size={20} />
                 </button>
               ))}
@@ -258,11 +252,9 @@ export default function AdminReportsPage() {
             >
               Previous
             </button>
-
             <span className="text-sm text-gray-500">
-              Showing <strong className="text-gray-500">{firstItemNumber}-{lastItemNumber}</strong> of <strong className="text-gray-500">{totalReports}</strong> reports
+              Showing <strong>{firstItemNumber}-{lastItemNumber}</strong> of <strong>{totalReports}</strong> reports
             </span>
-
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
@@ -274,13 +266,11 @@ export default function AdminReportsPage() {
         )}
       </div>
 
-      {/* Right Side - Detail Panel */}
+      {/* Right — Detail Panel */}
       <div className="lg:col-span-1 bg-white rounded-2xl shadow overflow-hidden flex flex-col">
         {selectedReport ? (
           <>
-            {/* Detail Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Large Image */}
               <div className="w-full h-48 rounded-lg overflow-hidden bg-gray-200 relative">
                 {selectedReport.imageUrl ? (
                   <Image
@@ -297,24 +287,32 @@ export default function AdminReportsPage() {
                 )}
               </div>
 
-              {/* Info */}
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 capitalize mb-1">
                   {selectedReport.species}
                 </h2>
-                <p className="text-gray-600 flex items-center gap-1">
-                 {selectedReport.location}
-                </p>
+                <div className="flex items-start gap-1.5 text-gray-600">
+                  <HiMapPin size={18} className="text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm">{selectedReport.location.address}</p>
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${selectedReport.location.lat}&mlon=${selectedReport.location.lng}#map=18/${selectedReport.location.lat}/${selectedReport.location.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-red-600 font-semibold hover:underline"
+                    >
+                      Open on map ↗
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              {/* Status Badge */}
               <div>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(selectedReport.status)}`}>
                   {getStatusText(selectedReport.status)}
                 </span>
               </div>
 
-              {/* Description */}
               {selectedReport.description && (
                 <div>
                   <p className="text-sm font-semibold text-gray-900 mb-1">Description</p>
@@ -322,20 +320,15 @@ export default function AdminReportsPage() {
                 </div>
               )}
 
-              {/* Reporter Info */}
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-gray-500 mb-1">Reported by</p>
                 <p className="font-semibold text-gray-900">{selectedReport.reportedBy?.fullName}</p>
                 <p className="text-xs text-gray-500">{selectedReport.reportedBy?.email}</p>
               </div>
 
-              {/* Date */}
-              <div className="text-xs text-gray-500">
-                {formatDate(selectedReport.createdAt)}
-              </div>
+              <div className="text-xs text-gray-500">{formatDate(selectedReport.createdAt)}</div>
             </div>
 
-            {/* Action Buttons - Only show if pending */}
             {selectedReport.status === "pending" && (
               <div className="p-4 border-t border-gray-200 space-y-2">
                 <button
@@ -343,26 +336,21 @@ export default function AdminReportsPage() {
                   disabled={actionLoading === selectedReport._id}
                   className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  <HiCheck size={18} />
-                  Approve
+                  <HiCheck size={18} /> Approve
                 </button>
-
                 <button
                   onClick={() => handleRejectReport(selectedReport._id)}
                   disabled={actionLoading === selectedReport._id}
                   className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  <HiX size={18} />
-                  Reject
+                  <HiX size={18} /> Reject
                 </button>
               </div>
             )}
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center">
             <p className="text-sm">Select a report to view details</p>
-            </div>
           </div>
         )}
       </div>

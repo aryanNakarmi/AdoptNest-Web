@@ -26,7 +26,11 @@ interface DashboardStats {
 interface RecentReport {
   _id: string;
   species: string;
-  location: string;
+  location: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
   status: "pending" | "approved" | "rejected";
   createdAt: string;
   reportedBy?: {
@@ -49,9 +53,7 @@ const getAuthToken = () => {
 
 const createAuthHeader = () => {
   const token = getAuthToken();
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  return { Authorization: `Bearer ${token}` };
 };
 
 export default function DashboardPage() {
@@ -79,32 +81,17 @@ export default function DashboardPage() {
         const reports = reportsResponse.data.data || [];
         const users = usersResponse.data.data || [];
 
-        const totalReports = reports.length;
-        const pendingReports = reports.filter(
-          (r: any) => r.status === "pending"
-        ).length;
-        const approvedReports = reports.filter(
-          (r: any) => r.status === "approved"
-        ).length;
-        const rejectedReports = reports.filter(
-          (r: any) => r.status === "rejected"
-        ).length;
-
-        const totalUsers = users.length;
-
         setStats({
-          totalReports,
-          pendingReports,
-          approvedReports,
-          rejectedReports,
-          totalUsers,
+          totalReports: reports.length,
+          pendingReports: reports.filter((r: any) => r.status === "pending").length,
+          approvedReports: reports.filter((r: any) => r.status === "approved").length,
+          rejectedReports: reports.filter((r: any) => r.status === "rejected").length,
+          totalUsers: users.length,
         });
 
-        // Sort by newest first
         const sortedReports = [...reports].sort(
           (a: any, b: any) =>
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
         setRecentReports(sortedReports.slice(0, 5));
@@ -112,7 +99,6 @@ export default function DashboardPage() {
         toast.error("Failed to load dashboard data");
       }
     } catch (error) {
-      console.error("Dashboard error:", error);
       toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -122,64 +108,28 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600" />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Overview of reports and users in AdoptNest.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-500 mt-1">Overview of reports and users in AdoptNest.</p>
         </div>
       </div>
 
-      {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard
-          title="Total Reports"
-          value={stats?.totalReports || 0}
-          icon={<HiClipboardList size={24} />}
-          color="blue"
-        />
-
-        <StatCard
-          title="Pending"
-          value={stats?.pendingReports || 0}
-          icon={<HiClock size={24} />}
-          color="orange"
-        />
-
-        <StatCard
-          title="Approved"
-          value={stats?.approvedReports || 0}
-          icon={<HiCheckCircle size={24} />}
-          color="green"
-        />
-
-        <StatCard
-          title="Rejected"
-          value={stats?.rejectedReports || 0}
-          icon={<HiXCircle size={24} />}
-          color="red"
-        />
-
-        <StatCard
-          title="Total Users"
-          value={stats?.totalUsers || 0}
-          icon={<HiUsers size={24} />}
-          color="purple"
-        />
+        <StatCard title="Total Reports" value={stats?.totalReports || 0} icon={<HiClipboardList size={24} />} color="blue" />
+        <StatCard title="Pending"       value={stats?.pendingReports || 0}  icon={<HiClock size={24} />}        color="orange" />
+        <StatCard title="Approved"      value={stats?.approvedReports || 0} icon={<HiCheckCircle size={24} />}  color="green" />
+        <StatCard title="Rejected"      value={stats?.rejectedReports || 0} icon={<HiXCircle size={24} />}      color="red" />
+        <StatCard title="Total Users"   value={stats?.totalUsers || 0}      icon={<HiUsers size={24} />}        color="purple" />
       </div>
 
-      {/* Recent Reports */}
       <RecentReports reports={recentReports} />
     </div>
   );
