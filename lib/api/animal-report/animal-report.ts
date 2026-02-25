@@ -5,7 +5,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1`;
 export interface AnimalReport {
   _id: string;
   species: string;
-  location: {
+  location: {        
     address: string;
     lat: number;
     lng: number;
