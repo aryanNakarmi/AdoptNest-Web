@@ -5,10 +5,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { HiPlus, HiEye } from 'react-icons/hi';
+import { HiHandRaised } from 'react-icons/hi2';
 import { handleGetAllAnimalPosts } from '@/lib/actions/animal-action';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:5050';
+
+interface AdoptionRequest {
+  userId: string;
+  fullName: string;
+  email: string;
+  requestedAt: string;
+}
 
 interface AnimalPost {
   _id: string;
@@ -20,11 +28,8 @@ interface AnimalPost {
   description: string;
   photos: string[];
   status: 'Available' | 'Adopted';
-  adoptedBy?: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
+  adoptedBy?: { _id: string; fullName: string; email: string };
+  adoptionRequests?: AdoptionRequest[];
   createdAt: string;
   updatedAt: string;
 }
@@ -35,9 +40,7 @@ export default function AdminAnimalsPage() {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'Available' | 'Adopted'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useEffect(() => { fetchPosts(); }, []);
 
   const fetchPosts = async () => {
     try {
@@ -52,22 +55,14 @@ export default function AdminAnimalsPage() {
     }
   };
 
-  // Filter by status first
-  const filteredPosts =
-    selectedStatus === 'all' ? posts : posts.filter((p) => p.status === selectedStatus);
-
-  // Then filter by search query (breed or species)
+  const filteredPosts = selectedStatus === 'all' ? posts : posts.filter((p) => p.status === selectedStatus);
   const searchedPosts = filteredPosts.filter((post) => {
     const query = searchQuery.toLowerCase();
-    return post._id.toLowerCase().includes(query) ||
-      post.breed.toLowerCase().includes(query) 
-    || post.species.toLowerCase().includes(query);
+    return post._id.toLowerCase().includes(query) || post.breed.toLowerCase().includes(query) || post.species.toLowerCase().includes(query);
   });
 
   const getStatusColor = (status: string) =>
-    status === 'Available'
-      ? 'bg-green-100 text-green-800 border-green-300'
-      : 'bg-blue-100 text-blue-800 border-blue-300';
+    status === 'Available' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-blue-100 text-blue-800 border-blue-300';
 
   return (
     <div className="space-y-6">
@@ -77,12 +72,8 @@ export default function AdminAnimalsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Animal Posts</h1>
           <p className="text-gray-500 mt-1">Manage all animal adoption posts</p>
         </div>
-        <Link
-          href="/admin/animal-posts/create"
-          className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow hover:bg-red-700 transition"
-        >
-          <HiPlus size={18} />
-          Create Post
+        <Link href="/admin/animal-posts/create" className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow hover:bg-red-700 transition">
+          <HiPlus size={18} /> Create Post
         </Link>
       </div>
 
@@ -93,37 +84,22 @@ export default function AdminAnimalsPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by breed or species..."
-          className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none
-          focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-3
-          text-black placeholder-black/50 pr-10"
+          className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-3 text-black placeholder-black/50 pr-10"
         />
-        {/* Clear button */}
         {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-5 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-          >
-            &#10005; {/* X icon */}
-          </button>
+          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-5 -translate-y-1/2 text-gray-400 hover:text-gray-700">&#10005;</button>
         )}
       </div>
 
       {/* Status Filter Tabs */}
       <div className="flex flex-wrap gap-3 bg-white p-3 rounded-lg border border-gray-200">
         {['all', 'Available', 'Adopted'].map((status) => {
-          const label =
-            status === 'all'
-              ? `All Posts (${posts.length})`
-              : `${status} (${posts.filter((p) => p.status === status).length})`;
+          const label = status === 'all' ? `All Posts (${posts.length})` : `${status} (${posts.filter((p) => p.status === status).length})`;
           return (
             <button
               key={status}
               onClick={() => setSelectedStatus(status as 'all' | 'Available' | 'Adopted')}
-              className={`px-4 py-1.5 rounded-lg font-medium transition ${
-                selectedStatus === status
-                  ? 'bg-red-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-1.5 rounded-lg font-medium transition ${selectedStatus === status ? 'bg-red-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             >
               {label}
             </button>
@@ -131,99 +107,93 @@ export default function AdminAnimalsPage() {
         })}
       </div>
 
-      {/* Loading / Empty State */}
+      {/* Loading / Empty */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600" />
         </div>
       ) : searchedPosts.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
           <p className="text-black text-lg mb-4">No posts found</p>
-          <Link
-            href="/admin/animal-posts/create"
-            className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition font-medium"
-          >
-            <HiPlus size={18} />
-            Create Post
+          <Link href="/admin/animal-posts/create" className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition font-medium">
+            <HiPlus size={18} /> Create Post
           </Link>
         </div>
       ) : (
-        /* Posts Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {searchedPosts.map((post) => (
-            <div
-              key={post._id}
-              className="rounded-xl shadow-md border border-gray-200 overflow-hidden transition transform hover:scale-105 hover:shadow-lg bg-white"
-            >
-              {/* Image */}
-              <div className="relative h-40 bg-gray-200">
-                {post.photos?.[0] ? (
-                  <Image
-                    src={`${BASE_URL}${post.photos[0]}`}
-                    alt={post.breed}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                    <span className="text-gray-600 font-medium text-sm">No Image</span>
+          {searchedPosts.map((post) => {
+            const requestCount = post.adoptionRequests?.length ?? 0;
+            const hasRequests = requestCount > 0 && post.status === 'Available';
+            return (
+              <div key={post._id} className="rounded-xl shadow-md border border-gray-200 overflow-hidden transition transform hover:scale-105 hover:shadow-lg bg-white">
+                {/* Image */}
+                <div className="relative h-40 bg-gray-200">
+                  {post.photos?.[0] ? (
+                    <Image src={`${BASE_URL}${post.photos[0]}`} alt={post.breed} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                      <span className="text-gray-600 font-medium text-sm">No Image</span>
+                    </div>
+                  )}
+
+                  {post.photos?.length > 0 && (
+                    <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-bold">
+                      {post.photos.length} photos
+                    </div>
+                  )}
+
+                  <div className="absolute top-2 right-2">
+                    <div className={`px-2 py-0.5 rounded-full text-xs font-bold border-2 ${getStatusColor(post.status)}`}>
+                      {post.status}
+                    </div>
                   </div>
-                )}
 
-                {/* Photo Count Badge */}
-                {post.photos?.length > 0 && (
-                  <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-bold">
-                    {post.photos.length} photos
-                  </div>
-                )}
-
-                {/* Status Badge */}
-                <div className="absolute top-2 right-2">
-                  <div
-                    className={`px-2 py-0.5 rounded-full text-xs font-bold border-2 ${getStatusColor(
-                      post.status
-                    )}`}
-                  >
-                    {post.status}
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-4 space-y-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 capitalize">{post.breed}</h3>
-                  <p className="text-sm text-gray-500">
-                    {post.species} • {post.gender} • {post.age}m
-                  </p>
-                </div>
-
-                <div className="text-sm text-gray-600 space-y-0.5">
-                  <p>{post.location}</p>
-                  {post.adoptedBy && post.status === 'Adopted' && (
-                    <p className="text-xs text-blue-600 font-semibold">
-                      Adopted by: {post.adoptedBy.fullName}
-                    </p>
+                  {/* ── Adoption Request Badge on image ── */}
+                  {hasRequests && (
+                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
+                      <HiHandRaised size={11} />
+                      {requestCount} request{requestCount !== 1 ? 's' : ''}
+                    </div>
                   )}
                 </div>
 
-                <p className="text-gray-700 text-sm line-clamp-2">{post.description}</p>
+                {/* Content */}
+                <div className="p-4 space-y-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 capitalize">{post.breed}</h3>
+                    <p className="text-sm text-gray-500">{post.species} • {post.gender} • {post.age}m</p>
+                  </div>
 
-                <Link
-                  href={`/admin/animal-posts/${post._id}`}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
-                >
-                  <HiEye size={16} />
-                  View Details
-                </Link>
+                  <div className="text-sm text-gray-600 space-y-0.5">
+                    <p>{post.location}</p>
+                    {post.adoptedBy && post.status === 'Adopted' && (
+                      <p className="text-xs text-blue-600 font-semibold">Adopted by: {post.adoptedBy.fullName}</p>
+                    )}
+                  </div>
 
-                <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
-                  Created: {new Date(post.createdAt).toLocaleDateString()}
-                </p>
+                  <p className="text-gray-700 text-sm line-clamp-2">{post.description}</p>
+
+                  {/* View Details button — shows request count badge inline */}
+                  <Link
+                    href={`/admin/animal-posts/${post._id}`}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                  >
+                    <HiEye size={16} />
+                    View Details
+                    {hasRequests && (
+                      <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        {requestCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+                    Created: {new Date(post.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
