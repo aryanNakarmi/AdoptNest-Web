@@ -1,5 +1,3 @@
-// app/(auth)/_components/ResetPasswordForm.tsx
-
 "use client";
 
 import { useForm } from "react-hook-form";

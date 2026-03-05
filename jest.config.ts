@@ -7,15 +7,24 @@ const config: Config = {
   coverageProvider: "v8",
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+
+  // Match YOUR tsconfig.json: "@/*" maps to "./*" (project root, NOT src/)
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/(.*)$": "<rootDir>/$1",
   },
+
+  // Handle ESM packages like react-icons, zod, @hookform
+  transformIgnorePatterns: [
+    "node_modules/(?!(react-icons|@hookform|zod)/)",
+  ],
+
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
     "!src/**/layout.tsx",
     "!src/**/page.tsx",
   ],
+
   coverageThreshold: {
     global: {
       branches: 70,
