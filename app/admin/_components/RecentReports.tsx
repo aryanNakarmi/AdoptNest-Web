@@ -99,7 +99,7 @@ export default function RecentReports({ reports }: RecentReportsProps) {
                 <p className="font-semibold text-gray-900 capitalize truncate">
                   {report.species}
                 </p>
-                {/* ✅ Fixed: .address */}
+               
                 <p className="text-sm text-gray-500 truncate">
                   {report.location.address}
                 </p>

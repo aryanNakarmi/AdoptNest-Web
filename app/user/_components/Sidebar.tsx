@@ -14,45 +14,45 @@ import {
   HiUser,
   HiCog,
   HiLogout,
+  HiX,
 } from "react-icons/hi";
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-  // On chat page — clear badge and don't poll
-  if (pathname === "/user/chat") {
-    setUnreadCount(0);
-    return;
-  }
-
-  let cancelled = false;
-
-  const fetchUnread = async () => {
-    try {
-      const res = await axios.get("/api/v1/chats/my-chat");
-      if (res.data.success && !cancelled) {
-        const messages = res.data.data.messages || [];
-        const count = messages.filter(
-          (m: any) => m.senderRole === "admin" && !m.isRead
-        ).length;
-        setUnreadCount(count);
-      }
-    } catch {
-      if (!cancelled) setUnreadCount(0);
+    if (pathname === "/user/chat") {
+      setUnreadCount(0);
+      return;
     }
-  };
 
-  fetchUnread();
-  const interval = setInterval(fetchUnread, 15000);
+    let cancelled = false;
 
-  return () => {
-    cancelled = true;
-    clearInterval(interval);
-  };
-}, [pathname]);
+    const fetchUnread = async () => {
+      try {
+        const res = await axios.get("/api/v1/chats/my-chat");
+        if (res.data.success && !cancelled) {
+          const messages = res.data.data.messages || [];
+          const count = messages.filter(
+            (m: any) => m.senderRole === "admin" && !m.isRead
+          ).length;
+          setUnreadCount(count);
+        }
+      } catch {
+        if (!cancelled) setUnreadCount(0);
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [pathname]);
 
   const navItems = [
     {
@@ -81,31 +81,45 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 fixed h-full flex flex-col p-6 justify-between">
+    <aside className="w-72 bg-white border-r border-gray-200 h-full flex flex-col p-6 justify-between">
       {/* Profile Section */}
       <div className="flex flex-col gap-8">
-        <div className="flex items-center gap-3">
-          {user?.profilePicture ? (
-            <Image
-              src={process.env.NEXT_PUBLIC_API_BASE_URL + user.profilePicture}
-              alt={user.fullName}
-              width={52}
-              height={52}
-              className="w-14 h-14 rounded-full object-cover border-2 border-red-600"
-            />
-          ) : (
-            <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center border-2 border-red-600">
-              <span className="text-gray-600 font-bold text-lg">
-                {user?.fullName?.charAt(0).toUpperCase() || "U"}
-              </span>
+        {/* Top row: profile + close button (mobile only) */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {user?.profilePicture ? (
+              <Image
+                src={process.env.NEXT_PUBLIC_API_BASE_URL + user.profilePicture}
+                alt={user.fullName}
+                width={52}
+                height={52}
+                className="w-14 h-14 rounded-full object-cover border-2 border-red-600"
+              />
+            ) : (
+              <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center border-2 border-red-600">
+                <span className="text-gray-600 font-bold text-lg">
+                  {user?.fullName?.charAt(0).toUpperCase() || "U"}
+                </span>
+              </div>
+            )}
+            <div className="flex flex-col">
+              <h1 className="text-gray-900 text-base font-bold">Welcome back</h1>
+              <p className="text-red-600 text-sm font-medium truncate max-w-[120px]">
+                {user?.fullName || user?.email}
+              </p>
             </div>
-          )}
-          <div className="flex flex-col">
-            <h1 className="text-gray-900 text-base font-bold">Welcome back</h1>
-            <p className="text-red-600 text-sm font-medium">
-              {user?.fullName || user?.email}
-            </p>
           </div>
+
+          {/* Close button — only visible on mobile */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition flex-shrink-0"
+              aria-label="Close menu"
+            >
+              <HiX size={20} />
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
@@ -116,6 +130,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onClose} // close sidebar on mobile after navigating
                 className={`flex items-center gap-3 px-5 py-3 rounded-3xl font-medium transition-colors cursor-pointer ${
                   isActive
                     ? "bg-red-600 text-white"

@@ -7,9 +7,9 @@ import { toast } from "react-toastify";
 import { handleUpdateProfile } from "@/lib/actions/auth-action";
 import { z } from "zod";
 
+// Email removed from schema — it cannot be changed
 const updateUserSchema = z.object({
   fullName: z.string().optional(),
-  email: z.string().email().optional(),
   phoneNumber: z.string().optional(),
   profilePicture: z.instanceof(File).optional(),
 });
@@ -22,7 +22,6 @@ export default function UpdateUserForm({ user }: { user: any }) {
       resolver: zodResolver(updateUserSchema),
       values: {
         fullName: user?.fullName || '',
-        email: user?.email || '',
         phoneNumber: user?.phoneNumber || '',
       }
     });
@@ -57,16 +56,16 @@ export default function UpdateUserForm({ user }: { user: any }) {
     try {
       const formData = new FormData();
       if (data.fullName) formData.append('fullName', data.fullName);
-      if (data.email) formData.append('email', data.email);
       if (data.phoneNumber) formData.append('phoneNumber', data.phoneNumber);
       if (data.profilePicture) formData.append('profilePicture', data.profilePicture);
+      // email intentionally NOT appended
 
       const response = await handleUpdateProfile(formData);
       if (!response.success) throw new Error(response.message || 'Update profile failed');
 
       handleDismissImage();
       toast.success('Profile updated successfully');
-      
+
     } catch (error: Error | any) {
       toast.error(error.message || 'Profile update failed');
       setError(error.message || 'Profile update failed');
@@ -142,15 +141,16 @@ export default function UpdateUserForm({ user }: { user: any }) {
           />
         </div>
 
-        {/* Email */}
+        {/* Email — read only, matches Flutter's enabled: false */}
         <div>
           <label className="block text-sm font-medium mb-1 text-black">Email</label>
           <input
             type="email"
-            {...register("email")}
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+            value={user?.email || ''}
+            disabled
+            className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
           />
-          {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+          <p className="text-xs text-gray-400 mt-1">Email cannot be changed.</p>
         </div>
 
         {/* Full Name */}
