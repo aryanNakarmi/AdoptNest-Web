@@ -1,10 +1,9 @@
-"use client";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoginForm from "@/app/(auth)/_components/LoginForm";
 
-// ── Mock auth action ──────────────────────────────────────────────────────────
+// ── Mocks ─────────────────────────────────────────────────────────────────────
 const mockHandleLogin = jest.fn();
 jest.mock("@/lib/actions/auth-action", () => ({
   handleLogin: (...args: any[]) => mockHandleLogin(...args),
@@ -12,17 +11,11 @@ jest.mock("@/lib/actions/auth-action", () => ({
   handleResetPassword: jest.fn(),
 }));
 
-// ── Mock AuthContext ──────────────────────────────────────────────────────────
 const mockSetUser = jest.fn();
-const mockSetIsAuthenticated = jest.fn();
 jest.mock("@/context/AuthContext", () => ({
-  useAuth: () => ({
-    setUser: mockSetUser,
-    setIsAuthenticated: mockSetIsAuthenticated,
-  }),
+  useAuth: () => ({ setUser: mockSetUser, setIsAuthenticated: jest.fn() }),
 }));
 
-// ── Router ────────────────────────────────────────────────────────────────────
 const mockReplace = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -36,20 +29,49 @@ jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
 }));
 
-// ── alert mock ────────────────────────────────────────────────────────────────
 const alertMock = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+// ── Suppress the react-hook-form + React 18 "not wrapped in act" warning ──────
+// This fires from RHF internals after async submission and is not a test bug.
+const _originalError = console.error;
+beforeAll(() => {
+  console.error = (...args: any[]) => {
+    const msg = typeof args[0] === "string" ? args[0] : "";
+    if (msg.includes("not wrapped in act") || msg.includes("Warning:")) return;
+    _originalError(...args);
+  };
+});
+afterAll(() => { console.error = _originalError; });
+
+// ── Helper: inject a value into a react-hook-form registered email input ──────
+// jsdom sanitises <input type="email"> and silently drops invalid values.
+// RHF listens to native `input` events via its own ref — we must:
+//   1. Use the React synthetic event system (nativeInputValueSetter) to set the
+//      value so React/RHF sees it properly.
+//   2. Fire an `input` event (not `change`) because RHF uses `input` internally.
+function setRHFEmailValue(input: HTMLElement, value: string) {
+  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+    window.HTMLInputElement.prototype,
+    "value"
+  )!.set!;
+  // Temporarily switch to type=text so jsdom accepts any string
+  (input as HTMLInputElement).type = "text";
+  nativeInputValueSetter.call(input, value);
+  // Fire both input and change — RHF needs input, zod resolver runs on change
+  fireEvent.input(input, { target: { value } });
+  fireEvent.change(input, { target: { value } });
+  (input as HTMLInputElement).type = "email";
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LoginForm", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
   describe("Rendering", () => {
-    it("renders the heading", () => {
+    it("renders Welcome Back heading", () => {
       render(<LoginForm />);
       expect(screen.getByText("Welcome Back!")).toBeInTheDocument();
       expect(screen.getByText("Log in to your account")).toBeInTheDocument();
@@ -65,52 +87,50 @@ describe("LoginForm", () => {
       expect(screen.getByLabelText("Password")).toBeInTheDocument();
     });
 
-    it("renders login submit button", () => {
+    it("renders Login submit button", () => {
       render(<LoginForm />);
       expect(screen.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
     });
 
-    it("renders 'Forgot?' link pointing to /request-password-reset", () => {
+    it("renders Forgot link to /request-password-reset", () => {
       render(<LoginForm />);
       expect(screen.getByRole("link", { name: /forgot/i })).toHaveAttribute(
-        "href",
-        "/request-password-reset"
+        "href", "/request-password-reset"
       );
     });
 
-    it("renders 'Sign Up' link pointing to /register", () => {
+    it("renders Sign Up link to /register", () => {
       render(<LoginForm />);
       expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
-        "href",
-        "/register"
+        "href", "/register"
       );
-    });
-
-    it("renders eye icon button for password toggle", () => {
-      render(<LoginForm />);
-      expect(screen.getByTestId("icon-eye")).toBeInTheDocument();
     });
 
     it("password field is type=password by default", () => {
       render(<LoginForm />);
       expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
     });
+
+    it("renders the eye icon toggle button", () => {
+      render(<LoginForm />);
+      expect(screen.getByTestId("icon-eye")).toBeInTheDocument();
+    });
   });
 
-  // ── Password Visibility Toggle ─────────────────────────────────────────────
+  // ── Password Toggle ────────────────────────────────────────────────────────
 
   describe("Password visibility toggle", () => {
-    it("toggles password to text when eye icon clicked", () => {
+    it("toggles password to text on click", () => {
       render(<LoginForm />);
       fireEvent.click(screen.getByRole("button", { name: "" }));
       expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
     });
 
-    it("toggles back to password type on second click", () => {
+    it("toggles back to password on second click", () => {
       render(<LoginForm />);
-      const toggleBtn = screen.getByRole("button", { name: "" });
-      fireEvent.click(toggleBtn);
-      fireEvent.click(toggleBtn);
+      const btn = screen.getByRole("button", { name: "" });
+      fireEvent.click(btn);
+      fireEvent.click(btn);
       expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
     });
 
@@ -119,38 +139,43 @@ describe("LoginForm", () => {
       fireEvent.click(screen.getByRole("button", { name: "" }));
       expect(screen.getByTestId("icon-eye-off")).toBeInTheDocument();
     });
+
+    it("toggle button is type=button not type=submit", () => {
+      render(<LoginForm />);
+      expect(screen.getByRole("button", { name: "" })).toHaveAttribute("type", "button");
+    });
   });
 
   // ── Validation ─────────────────────────────────────────────────────────────
-  // Exact messages from loginSchema in schema.ts:
-  //   email: z.email({ message: "Enter a valid email" })
-  //   password: z.string().min(6, { message: "Minimum 6 characters" })
+  // loginSchema messages:
+  //   email    → "Enter a valid email"
+  //   password → "Minimum 6 characters"
 
   describe("Form validation", () => {
-    it("shows error message for empty email on submit", async () => {
+    it("shows email error when form is submitted empty", async () => {
       render(<LoginForm />);
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
-      await waitFor(() => {
-        expect(screen.getByText("Enter a valid email")).toBeInTheDocument();
-      });
+      await waitFor(() =>
+        expect(screen.getByText("Enter a valid email")).toBeInTheDocument()
+      );
     });
 
-    it("shows error message for invalid email format", async () => {
+    it("shows email error when value is not a valid email address", async () => {
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "notanemail");
+      setRHFEmailValue(screen.getByLabelText("Email"), "notanemail");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
-      await waitFor(() => {
-        expect(screen.getByText("Enter a valid email")).toBeInTheDocument();
-      });
+      await waitFor(() =>
+        expect(screen.getByText("Enter a valid email")).toBeInTheDocument()
+      );
     });
 
-    it("shows error message for empty password on submit", async () => {
+    it("shows password error when password is empty", async () => {
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "user@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "user@example.com");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
-      await waitFor(() => {
-        expect(screen.getByText("Minimum 6 characters")).toBeInTheDocument();
-      });
+      await waitFor(() =>
+        expect(screen.getByText("Minimum 6 characters")).toBeInTheDocument()
+      );
     });
   });
 
@@ -160,7 +185,7 @@ describe("LoginForm", () => {
     const fillAndSubmit = async (role: string) => {
       mockHandleLogin.mockResolvedValue({ success: true, data: { role } });
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "user@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "user@example.com");
       await userEvent.type(screen.getByLabelText("Password"), "Secret1");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
     };
@@ -168,7 +193,7 @@ describe("LoginForm", () => {
     it("calls handleLogin with correct values", async () => {
       mockHandleLogin.mockResolvedValue({ success: true, data: { role: "user" } });
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "user@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "user@example.com");
       await userEvent.type(screen.getByLabelText("Password"), "Secret1");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
       await waitFor(() =>
@@ -179,19 +204,19 @@ describe("LoginForm", () => {
       );
     });
 
-    it("calls setUser with the response data", async () => {
+    it("calls setUser with response data", async () => {
       await fillAndSubmit("user");
       await waitFor(() =>
         expect(mockSetUser).toHaveBeenCalledWith({ role: "user" })
       );
     });
 
-    it("redirects admin role to /admin", async () => {
+    it("redirects admin to /admin", async () => {
       await fillAndSubmit("admin");
       await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/admin"));
     });
 
-    it("redirects user role to /user/dashboard", async () => {
+    it("redirects user to /user/dashboard", async () => {
       await fillAndSubmit("user");
       await waitFor(() =>
         expect(mockReplace).toHaveBeenCalledWith("/user/dashboard")
@@ -203,7 +228,7 @@ describe("LoginForm", () => {
       await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/"));
     });
 
-    it("handles role casing (ADMIN → /admin)", async () => {
+    it("handles uppercase role casing (ADMIN → /admin)", async () => {
       await fillAndSubmit("ADMIN");
       await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/admin"));
     });
@@ -212,13 +237,13 @@ describe("LoginForm", () => {
   // ── Submission – failure ───────────────────────────────────────────────────
 
   describe("Form submission – failure", () => {
-    it("calls alert when login fails", async () => {
+    it("calls window.alert when login fails", async () => {
       mockHandleLogin.mockResolvedValue({
         success: false,
         message: "Invalid credentials",
       });
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "bad@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "bad@example.com");
       await userEvent.type(screen.getByLabelText("Password"), "Wrong1");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
       await waitFor(() =>
@@ -229,7 +254,7 @@ describe("LoginForm", () => {
     it("does not redirect on failure", async () => {
       mockHandleLogin.mockResolvedValue({ success: false, message: "Oops" });
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "bad@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "bad@example.com");
       await userEvent.type(screen.getByLabelText("Password"), "Wrong1");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
       await waitFor(() => expect(alertMock).toHaveBeenCalled());
@@ -240,15 +265,17 @@ describe("LoginForm", () => {
   // ── Loading state ──────────────────────────────────────────────────────────
 
   describe("Loading state", () => {
-    it("shows 'Logging in...' and disables button while submitting", async () => {
+    it("shows Logging in... and disables button while pending", async () => {
       mockHandleLogin.mockImplementation(
         () => new Promise((resolve) => setTimeout(resolve, 500))
       );
       render(<LoginForm />);
-      await userEvent.type(screen.getByLabelText("Email"), "user@example.com");
+      setRHFEmailValue(screen.getByLabelText("Email"), "user@example.com");
       await userEvent.type(screen.getByLabelText("Password"), "Secret1");
       fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
-      expect(screen.getByRole("button", { name: /logging in/i })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /logging in/i })
+      ).toBeDisabled();
     });
   });
 
@@ -263,14 +290,8 @@ describe("LoginForm", () => {
     it("password input has autocomplete=current-password", () => {
       render(<LoginForm />);
       expect(screen.getByLabelText("Password")).toHaveAttribute(
-        "autocomplete",
-        "current-password"
+        "autocomplete", "current-password"
       );
-    });
-
-    it("toggle button is type=button not type=submit", () => {
-      render(<LoginForm />);
-      expect(screen.getByRole("button", { name: "" })).toHaveAttribute("type", "button");
     });
   });
 });
