@@ -7,9 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "jest --runInBand --verbose --detectOpenHandles",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
